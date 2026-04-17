@@ -9,7 +9,8 @@ TimeIndex 是一个基于本地大模型（如 Gemma-4 运行于 Ollama）的个
 
 TimeIndex/
 ├── .env                    # 全局配置文件 (见配置定义)
-├── requirements.txt        # 依赖清单 (wmi, lancedb, requests等)
+├── pyproject.toml          # 项目配置与依赖管理 (使用 uv 管理依赖)
+├── uv.lock                 # uv 锁定的依赖版本
 ├── daemon/                 # 后台守护进程模块
 │   ├── __init__.py
 │   ├── daemon.py           # 核心循环：WMI监控与任务调度

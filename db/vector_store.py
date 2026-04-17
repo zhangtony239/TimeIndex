@@ -263,9 +263,15 @@ class VectorStore:
         results = table.search().to_pandas()
         
         # 过滤包含任一标签的记录
-        mask = results["tags"].apply(
-            lambda x: any(tag in x for tag in tags) if x else False
-        )
+        # 注意：tags 列中的值是 numpy 数组，需要转换为列表或使用 numpy 方法
+        def tags_match(x):
+            if x is None or (hasattr(x, '__len__') and len(x) == 0):
+                return False
+            # 将 x 转换为列表（如果是 numpy 数组）
+            x_list = x.tolist() if hasattr(x, 'tolist') else list(x)
+            return any(tag in x_list for tag in tags)
+        
+        mask = results["tags"].apply(tags_match)
         results = results[mask]
         results = results.head(limit)
         

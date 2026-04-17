@@ -15,6 +15,7 @@ from queue import Queue, Empty
 
 from .wmi_monitor import WmiCollector, SystemSnapshot, ProcessEvent
 from .llm_processor import LLMProcessor
+from db.vector_store import TimeIndexStore
 from utils.config import config
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ class Daemon:
             global_blacklist=global_blacklist or []
         )
         self.llm_processor = LLMProcessor()
+        self.db_store = TimeIndexStore()
         
         # 事件队列，用于传递采集到的快照
         self._snapshot_queue: Queue = Queue(maxsize=100)
@@ -204,10 +206,9 @@ class Daemon:
         }
     
     def _write_to_db(self, record: Dict[str, Any]):
-        """写入数据库 (占位符，待 db 模块实现)"""
-        # TODO: 集成 LanceDB
+        """写入数据库"""
         logger.debug(f"Writing record to DB: {record['id']}")
-        pass
+        self.db_store.add_activity_record(record)
     
     def _idle_loop(self):
         """闲时任务循环"""
@@ -250,14 +251,12 @@ class Daemon:
             logger.error(f"Error in retag task: {e}", exc_info=True)
     
     def _read_pending_retag_records(self, batch_size: int) -> List[Dict[str, Any]]:
-        """读取待重打标的记录 (占位符)"""
-        # TODO: 集成 LanceDB
-        return []
+        """读取待重打标的记录"""
+        return self.db_store.get_pending_retag(batch_size)
     
     def _update_retag_records(self, records: List[Dict[str, Any]]):
-        """更新重打标后的记录 (占位符)"""
-        # TODO: 集成 LanceDB
-        pass
+        """更新重打标后的记录"""
+        self.db_store.update_retag_records(records)
     
     @staticmethod
     def _is_admin() -> bool:

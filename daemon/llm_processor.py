@@ -87,17 +87,31 @@ class LLMProcessor:
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.3,
-                max_tokens=200
+                max_tokens=1024
             )
             
             # 解析响应
-            content = response.choices[0].message.content
+            message = response.choices[0].message
+            message_dict = message.model_dump()
+            
+            # 优先使用 content，如果为空则尝试 reasoning_content
+            content = message_dict.get('content') or ''
+            if not content:
+                reasoning = message_dict.get('reasoning_content')
+                if reasoning:
+                    content = reasoning
+                    logger.debug("Using reasoning_content as content is empty")
+            
+            logger.debug(f"LLM response: content_len={len(content)}, finish_reason={response.choices[0].finish_reason}")
+            
             if content:
                 result = self._parse_json_response(content)
-                if isinstance(result, dict):
+                if isinstance(result, dict) and result:
                     result["timestamp"] = snapshot.timestamp.isoformat()
                     return result
-            logger.warning("LLM returned empty response")
+                logger.warning(f"Failed to parse LLM response as JSON dict: {content[:200]}")
+            else:
+                logger.warning("LLM returned empty response")
             return self._default_intent(snapshot)
                 
         except Exception as e:
@@ -139,11 +153,18 @@ class LLMProcessor:
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.2,
-                max_tokens=2000
+                max_tokens=4096
             )
             
             # 解析响应
-            content = response.choices[0].message.content
+            message = response.choices[0].message
+            message_dict = message.model_dump()
+            content = message_dict.get('content') or ''
+            if not content:
+                reasoning = message_dict.get('reasoning_content')
+                if reasoning:
+                    content = reasoning
+            
             if content:
                 return self._parse_retag_response(content, records)
             else:
@@ -198,8 +219,25 @@ class LLMProcessor:
             # 尝试直接解析
             return json.loads(content)
         except json.JSONDecodeError:
-            # 尝试提取 JSON 块
+            # 处理 markdown 代码块格式 (```json ... ```)
             try:
+                # 查找 JSON 块
+                if '```' in content:
+                    # 提取代码块内容
+                    lines = content.split('\n')
+                    json_lines = []
+                    in_code_block = False
+                    for line in lines:
+                        if line.strip().startswith('```'):
+                            if in_code_block:
+                                break
+                            in_code_block = True
+                            continue
+                        if in_code_block:
+                            json_lines.append(line)
+                    content = '\n'.join(json_lines)
+                
+                # 尝试提取 JSON 对象
                 start = content.index('{')
                 end = content.rindex('}') + 1
                 json_str = content[start:end]

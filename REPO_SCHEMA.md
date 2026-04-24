@@ -20,7 +20,6 @@ TimeIndex/
 │   ├── __init__.py
 │   └── vector_store.py     # 封装 LanceDB SDK，处理 RAG 逻辑
 ├── cli/                    # 命令行交互层
-│   ├── __init__.py
 │   └── entry.py            # CLI 入口，解析 /ti 系列命令
 ├── skill.md                # 技能定义与调用规范
 ├── utils/                  # 工具类
@@ -54,6 +53,8 @@ TimeIndex/
 生命周期管理: 根据 .env 中的 rag_keepalive 和 rag_timeout 自动清理或归档过期日志。
 
 ### 3.3 交互与入口层 (cli/entry.py)
+
+技术栈: [Typer](https://typer.tiangolo.com/)
 
 CLI 入口，处理用户的显式命令：
 

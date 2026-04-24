@@ -5,6 +5,12 @@
 import logging
 import time
 import sys
+import os
+
+# 将 src 目录添加到 sys.path
+src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "src"))
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
 
 # 配置日志
 logging.basicConfig(
@@ -16,7 +22,7 @@ logging.basicConfig(
 def test_config():
     print("=" * 50)
     print("测试配置加载...")
-    from utils.config import config
+    from TimeIndex.utils.config import config
     
     print(f"global_blacklist: {config.global_blacklist}")
     print(f"retag_rules: {config.retag_rules}")
@@ -30,7 +36,7 @@ def test_config():
 def test_wmi_collector():
     print("=" * 50)
     print("测试 WMI 采集器...")
-    from daemon.wmi_monitor import WmiCollector
+    from TimeIndex.daemon.wmi_monitor import WmiCollector
     
     collector = WmiCollector(interval=2)
     
@@ -57,7 +63,7 @@ def test_wmi_collector():
 def test_llm_processor():
     print("=" * 50)
     print("测试 LLM 处理器...")
-    from daemon.llm_processor import LLMProcessor
+    from TimeIndex.daemon.llm_processor import LLMProcessor
     
     processor = LLMProcessor()
     
@@ -66,7 +72,7 @@ def test_llm_processor():
     print(f"LLM 服务可用: {available}")
     
     if available:
-        from daemon.wmi_monitor import SystemSnapshot, HardwareStats
+        from TimeIndex.daemon.wmi_monitor import SystemSnapshot, HardwareStats
         from datetime import datetime
         
         # 创建测试快照
@@ -93,7 +99,7 @@ def test_llm_processor():
 def test_daemon():
     print("=" * 50)
     print("测试守护进程...")
-    from daemon.daemon import Daemon
+    from TimeIndex.daemon.daemon import Daemon
     
     daemon = Daemon(
         wmi_interval=2,

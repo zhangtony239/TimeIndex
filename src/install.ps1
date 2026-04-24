@@ -1,4 +1,4 @@
-# src/install.ps1
+﻿# src/install.ps1
 # TimeIndex 守护进程安装脚本
 
 # 1. 自提权逻辑

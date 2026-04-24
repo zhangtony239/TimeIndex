@@ -144,15 +144,43 @@ def about(
 @daemon_app.command("install")
 def daemon_install():
     """安装守护进程（配置自启动），写入 WMI 过滤设置"""
-    console.print("[yellow]守护进程安装功能尚未实现，涉及 Windows 服务注入，待开发。[/yellow]")
-    console.print("TODO: 配置自启动，写入 WMI 过滤设置")
+    import subprocess
+    from pathlib import Path
+    
+    script_path = Path(__file__).parent / "src" / "install.ps1"
+    if not script_path.exists():
+        console.print(f"[red]错误: 找不到安装脚本 {script_path}[/red]")
+        raise typer.Exit(1)
+    
+    console.print("[cyan]正在启动安装脚本 (需要管理员权限)...[/cyan]")
+    try:
+        # 使用 powershell 执行脚本
+        subprocess.run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script_path)], check=True)
+        console.print("[green]安装脚本执行完毕。[/green]")
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]安装脚本执行失败: {e}[/red]")
+        raise typer.Exit(1)
 
 @daemon_app.command("uninstall")
 def daemon_uninstall():
     """卸载守护进程"""
-    # 约束：若 daemon 卸载失败，必须终止卸载流程并告警
-    console.print("[yellow]守护进程卸载功能尚未实现，涉及 Windows 服务移除，待开发。[/yellow]")
-    console.print("[red]约束：若 daemon 卸载失败，必须终止卸载流程并告警[/red]")
+    import subprocess
+    from pathlib import Path
+    
+    script_path = Path(__file__).parent / "src" / "uninstall.ps1"
+    if not script_path.exists():
+        console.print(f"[red]错误: 找不到卸载脚本 {script_path}[/red]")
+        raise typer.Exit(1)
+    
+    console.print("[cyan]正在启动卸载脚本 (需要管理员权限)...[/cyan]")
+    try:
+        # 使用 powershell 执行脚本
+        subprocess.run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script_path)], check=True)
+        console.print("[green]卸载脚本执行完毕。[/green]")
+    except subprocess.CalledProcessError as e:
+        console.print("[red]约束：若 daemon 卸载失败，必须终止卸载流程并告警[/red]")
+        console.print(f"[red]卸载脚本执行失败: {e}[/red]")
+        raise typer.Exit(1)
 
 @daemon_app.command("start")
 def daemon_start(verbose: bool = typer.Option(False, "--verbose", "-v", help="启用详细输出")):

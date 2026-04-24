@@ -13,6 +13,8 @@ TimeIndex/
 ├── uv.lock                 # uv 锁定的依赖版本
 ├── entry.py               # CLI 入口，解析 /ti 系列命令
 ├── src/                   # 源代码目录
+│   ├── install.ps1         # 服务安装脚本 (含自提权)
+│   ├── uninstall.ps1       # 服务卸载脚本 (含自提权)
 │   └── TimeIndex/
 │       ├── daemon/         # 后台守护进程模块
 │       │   ├── __init__.py

@@ -15,8 +15,8 @@ from queue import Queue, Empty
 
 from .wmi_monitor import WmiCollector, SystemSnapshot, ProcessEvent
 from .llm_processor import LLMProcessor
-from db.vector_store import TimeIndexStore
-from utils.config import config
+from ..db.vector_store import TimeIndexStore
+from ..utils.config import config
 
 logger = logging.getLogger(__name__)
 

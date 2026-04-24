@@ -21,8 +21,8 @@ from pathlib import Path
 import lancedb
 import pyarrow as pa
 from lancedb.table import Table
+from ..utils.config import config
 
-from utils.config import config
 
 logger = logging.getLogger(__name__)
 

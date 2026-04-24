@@ -153,7 +153,7 @@ class Doctor:
     def _check_ollama_connectivity(self):
         """检查 Ollama 服务连通性"""
         try:
-            from utils.config import config
+            from ..utils.config import config
             from openai import OpenAI
             
             base_url = config.llm_base_url
@@ -195,7 +195,7 @@ class Doctor:
     def _check_model_available(self):
         """检查模型是否已拉取"""
         try:
-            from utils.config import config
+            from ..utils.config import config
             from openai import OpenAI
             
             base_url = config.llm_base_url
@@ -235,7 +235,7 @@ class Doctor:
     def _check_lancedb_path(self):
         """检查 LanceDB 目录读写权限"""
         try:
-            from db.vector_store import DEFAULT_LANCEDB_PATH
+            from ..db.vector_store import DEFAULT_LANCEDB_PATH
             
             db_path = Path(DEFAULT_LANCEDB_PATH)
             

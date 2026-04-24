@@ -22,6 +22,7 @@ DEFAULT_CONFIG = {
     "cpu_performance_weight": None,
     "LLM_BASE_URL": "http://localhost:11434/v1",
     "LLM_API_KEY": "ollama",
+    "USER_DEBUG": False,
 }
 
 
@@ -40,8 +41,8 @@ class Config:
             env_path: .env 文件路径，默认为项目根目录下的 .env
         """
         if env_path is None:
-            # 默认查找项目根目录的 .env
-            env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+            # 默认查找项目根目录的 .env (src/TimeIndex/utils/config.py -> ../../../.env)
+            env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
         
         self._env_path = env_path
         self._config: Dict[str, Any] = dict(DEFAULT_CONFIG)
@@ -81,6 +82,10 @@ class Config:
         self._config["LLM_BASE_URL"] = env_vars.get("LLM_BASE_URL", "http://localhost:11434/v1").strip("'\"")
         self._config["LLM_API_KEY"] = env_vars.get("LLM_API_KEY", "ollama").strip("'\"")
         
+        user_debug = env_vars.get("USER_DEBUG", "false").lower()
+        self._config["USER_DEBUG"] = user_debug == "true"
+        
+        self._setup_logging()
         logger.info(f"Config loaded from {self._env_path}")
     
     def _parse_env_file(self, env_path: str) -> Dict[str, str]:
@@ -116,6 +121,33 @@ class Config:
         
         return env_vars
     
+    def _setup_logging(self):
+        """根据 USER_DEBUG 配置日志"""
+        user_debug = self._config.get("USER_DEBUG", False)
+        level = logging.DEBUG if user_debug else logging.ERROR
+        
+        handlers: List[logging.Handler] = [logging.StreamHandler()]
+        
+        if user_debug:
+            # 生成 log 文件在系统桌面上
+            try:
+                desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+                log_file = os.path.join(desktop_path, "timeindex_debug.log")
+                handlers.append(logging.FileHandler(log_file, encoding='utf-8'))
+            except Exception as e:
+                print(f"Failed to create desktop log file: {e}")
+
+        # 清除之前的 handler 重新配置
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+
+        logging.basicConfig(
+            level=level,
+            format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            handlers=handlers
+        )
+
     def _parse_list(self, value: str) -> List[str]:
         """安全地解析列表字符串"""
         try:
@@ -181,6 +213,11 @@ class Config:
     def llm_api_key(self) -> str:
         """LLM API 密钥"""
         return self._config["LLM_API_KEY"]
+    
+    @property
+    def user_debug(self) -> bool:
+        """Debug 模式开关"""
+        return self._config["USER_DEBUG"]
     
     def reload(self):
         """重新加载配置"""

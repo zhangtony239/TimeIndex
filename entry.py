@@ -38,13 +38,9 @@ class TimeRange(str, Enum):
     month = "month"
 
 def setup_logging(verbose: bool = False):
-    """配置日志"""
-    level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    """配置日志 (已由 config.py 统一管理，此处仅处理 CLI 显式 verbose)"""
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
 
 def format_record(record: dict) -> str:
     """格式化单条记录为可读字符串"""
@@ -209,6 +205,7 @@ def config_cmd(
         table.add_row("cpu_performance_weight", str(config.cpu_performance_weight))
         table.add_row("LLM_BASE_URL", config.llm_base_url)
         table.add_row("LLM_API_KEY", '*' * len(config.llm_api_key) if config.llm_api_key else "(未设置)")
+        table.add_row("USER_DEBUG", str(config.user_debug))
         
         console.print(table)
         

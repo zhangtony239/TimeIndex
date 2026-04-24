@@ -23,7 +23,7 @@ TimeIndex/
 │       │   ├── __init__.py
 │       │   └── vector_store.py # 封装 LanceDB SDK
 │       └── utils/          # 工具类
-│           ├── config.py   # .env 解析与全局配置加载
+│           ├── config.py   # .env 解析与全局配置加载 (含 USER_DEBUG 动态日志逻辑)
 │           └── doctor.py   # 环境自检与依赖检查
 ├── SKILL.md                # 技能定义与调用规范
 └── README.md
@@ -82,6 +82,10 @@ CLI 入口，处理用户的显式命令：
 技能调用: 确认 ToDo 后，动态加载并调用 skills/ 目录下相关的 Skill 脚本完成任务。
 
 ## 4. 开发规范提示 (Development Guidelines)
+
+日志规范: 系统日志由 `src/TimeIndex/utils/config.py` 统一管理。受 `.env` 中的 `USER_DEBUG` 开关控制：
+- `USER_DEBUG=false` (默认): 日志级别为 `ERROR`，仅输出到控制台。
+- `USER_DEBUG=true`: 日志级别为 `DEBUG`，且会在用户桌面生成 `timeindex_debug.log` 文件。
 
 平台限制: WMI 是 Windows 专属接口，请使用 wmi 或 psutil python 库实现，并注意处理权限问题（可能需要管理员权限运行 daemon）。
 

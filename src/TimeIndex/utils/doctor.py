@@ -8,7 +8,6 @@ utils/doctor.py - 环境自检与依赖检查
 - LanceDB 目录读写权限
 """
 
-import os
 import sys
 import ctypes
 import logging
@@ -103,8 +102,8 @@ class Doctor:
             "openai",
             "pandas",
             "psutil",
-            "dotenv",
             "wmi",
+            "yaml",
         ]
         
         missing = []
@@ -190,10 +189,12 @@ class Doctor:
     
     def _check_model_available(self):
         """检查模型是否已拉取"""
+        model_name = "unknown"
         try:
             from ..utils.config import config
             from openai import OpenAI
             
+            model_name = config.llm_model
             base_url = config.llm_base_url
             api_key = config.llm_api_key
             
@@ -207,22 +208,22 @@ class Doctor:
             model_ids = [m.id for m in models.data] if models.data else []
             
             # 检查目标模型是否存在（支持子串匹配）
-            if any(config.llm_model in m or m in config.llm_model for m in model_ids):
+            if any(model_name in m or m in model_name for m in model_ids):
                 self._results.append(DoctorCheck(
-                    f"模型 ({config.llm_model})",
+                    f"模型 ({model_name})",
                     CheckStatus.OK,
                     "已加载"
                 ))
             else:
                 self._results.append(DoctorCheck(
-                    f"模型 ({config.llm_model})",
+                    f"模型 ({model_name})",
                     CheckStatus.WARNING,
                     f"未找到，可用模型: {', '.join(model_ids[:5]) if model_ids else '无'}"
                 ))
                 
         except Exception as e:
             self._results.append(DoctorCheck(
-                f"模型 ({config.llm_model})",
+                f"模型 ({model_name})",
                 CheckStatus.WARNING,
                 f"无法检查: {e}"
             ))

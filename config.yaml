@@ -1,0 +1,10 @@
+global_blacklist: []
+retag_rules: {}
+rag_keepalive: "auto"
+rag_timeout: null
+retag_mode: 20
+cpu_performance_weight: null
+LLM_BASE_URL: "http://localhost:11434/v1"
+LLM_API_KEY: "ollama"
+LLM_MODEL: "gemma-4-e4b"
+USER_DEBUG: false

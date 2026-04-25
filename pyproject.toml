@@ -8,14 +8,14 @@ dependencies = [
     "openai>=2.32.0",
     "pandas>=3.0.2",
     "psutil>=7.2.2",
-    "python-dotenv>=1.2.2",
     "pywin32>=311",
     "typer>=0.24.2",
     "wmi>=1.5.1",
+    "pyyaml>=6.0.1",
 ]
 
 [project.scripts]
-ti = "entry:app"
+ti = "TimeIndex.entry:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -25,4 +25,4 @@ build-backend = "hatchling.build"
 package = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/TimeIndex", "entry.py"]
+packages = ["src/TimeIndex", "config.yaml"]

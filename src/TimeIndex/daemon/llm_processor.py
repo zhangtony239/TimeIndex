@@ -10,16 +10,11 @@ import os
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from openai import OpenAI
-from dotenv import load_dotenv
 
 from .wmi_monitor import SystemSnapshot, ProcessEvent, WindowInfo
 from ..utils.config import config
 
 logger = logging.getLogger(__name__)
-
-# 加载 .env 配置
-load_dotenv()
-
 
 class LLMProcessor:
     """

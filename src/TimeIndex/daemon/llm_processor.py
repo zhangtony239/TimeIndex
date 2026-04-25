@@ -13,7 +13,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 from .wmi_monitor import SystemSnapshot, ProcessEvent, WindowInfo
-from utils.config import config
+from ..utils.config import config
 
 logger = logging.getLogger(__name__)
 

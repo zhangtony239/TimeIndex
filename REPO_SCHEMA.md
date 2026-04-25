@@ -70,7 +70,7 @@ CLI 入口，处理用户的显式命令：
 
 /ti daemon uninstall: 卸载守护进程（删除计划任务）。约束：若 daemon 卸载失败，必须终止卸载流程并告警。
 
-/ti config [key:value]: 修改 `config.yaml` 配置项。
+/ti config [key=value]: 修改 `config.yaml` 配置项。
 
 /ti config: 读取配置项并执行自检。
 

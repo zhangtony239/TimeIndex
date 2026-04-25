@@ -8,3 +8,5 @@
 
 # 屏蔽.lancedb目录
 .lancedb/
+
+old/

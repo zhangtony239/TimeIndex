@@ -13,6 +13,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 from .wmi_monitor import SystemSnapshot, ProcessEvent, WindowInfo
+from utils.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ class LLMProcessor:
         self,
         base_url: Optional[str] = None,
         api_key: Optional[str] = None,
-        model: str = "gemma4"
+        model: Optional[str] = None
     ):
         """
         初始化 LLM 处理器
@@ -41,11 +42,11 @@ class LLMProcessor:
         Args:
             base_url: Ollama API 地址 (从 LLM_BASE_URL 环境变量读取)
             api_key: API 密钥 (从 LLM_API_KEY 环境变量读取，可选)
-            model: 使用的模型名称
+            model: 使用的模型名称 (从 LLM_MODEL 环境变量读取，默认 gemma-4-e4b)
         """
-        self.base_url = base_url or os.getenv("LLM_BASE_URL", "http://localhost:11434/v1")
-        self.api_key = api_key or os.getenv("LLM_API_KEY", "ollama")
-        self.model = model
+        self.base_url = base_url or config.llm_base_url
+        self.api_key = api_key or config.llm_api_key
+        self.model = model or config.llm_model
         
         # 初始化 OpenAI 客户端 (兼容 Ollama API)
         self.client = OpenAI(
@@ -75,12 +76,16 @@ class LLMProcessor:
                     {
                         "role": "system",
                         "content": (
-                            "你是一个个人活动分析助手。根据系统活动日志，推测用户当前的意图和活动。"
+                            "你是一个个人活动分析助手。根据系统活动日志，推测用户当前正在做什么。\n\n"
+                            "重要说明:\n"
+                            "1. 活动窗口格式为 [进程名] 窗口标题。窗口标题（如网页标题、文档名）是理解用户行为的关键信息，必须充分利用。\n"
+                            "2. summary 应该用自然语言描述用户具体在干什么，例如：'在Chrome中阅读GitHub文档'、'在VSCode中编写Python代码'，而不是笼统地说'使用浏览器'。\n"
+                            "3. primary_app 优先使用窗口标题中的关键信息（如 'Chrome - GitHub'），而不仅仅是进程名。\n\n"
                             "请返回 JSON 格式，包含以下字段:\n"
-                            "- summary: 一句话总结当前活动\n"
-                            "- tags: 标签列表 (如 'coding', 'browsing', 'meeting')\n"
+                            "- summary: 一句话总结用户当前在做什么（要具体，包含窗口标题中的关键信息）\n"
+                            "- tags: 标签列表 (如 'coding', 'browsing', 'meeting', 'reading', 'writing' 等)\n"
                             "- confidence: 置信度 (0-1)\n"
-                            "- primary_app: 主要使用的应用程序\n"
+                            "- primary_app: 主要使用的应用（优先使用窗口标题中的友好名称，如 'Chrome - GitHub' 而非 'chrome.exe'）\n"
                             "只返回 JSON，不要有其他内容。"
                         )
                     },
@@ -108,6 +113,18 @@ class LLMProcessor:
                 result = self._parse_json_response(content)
                 if isinstance(result, dict) and result:
                     result["timestamp"] = snapshot.timestamp.isoformat()
+                    # [DEBUG] 打印 LLM 返回的 primary_app，对比窗口标题
+                    logger.debug(
+                        f"[LLM意图推断] primary_app='{result.get('primary_app', 'N/A')}' | "
+                        f"summary='{result.get('summary', 'N/A')}' | "
+                        f"tags={result.get('tags', [])}"
+                    )
+                    if snapshot.windows:
+                        top_window = snapshot.windows[0]
+                        logger.debug(
+                            f"[LLM意图推断] 前台窗口: 进程='{top_window.process_name}' | "
+                            f"标题='{top_window.title}'"
+                        )
                     return result
                 logger.warning(f"Failed to parse LLM response as JSON dict: {content[:200]}")
             else:

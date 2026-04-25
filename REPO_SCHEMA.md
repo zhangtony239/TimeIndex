@@ -41,7 +41,7 @@ TimeIndex/
 
 实时采集: 通过 `wmi_monitor.py` 读取程序原始日志（进程启动、窗口标题等）。
 
-意图推测: 调用 `llm_processor.py` (基于 gemma4) 对原始日志进行一句话/标签化总结。
+意图推测: 调用 `llm_processor.py`。利用 LLM 的推理能力（支持 `reasoning_content` 提取），将窗口标题与进程名结合，生成具体的活动摘要（Summary）和主要应用（Primary App）。
 
 初始入库: 将总结后的数据通过 `vector_store.py` 写入 LanceDB。
 
@@ -71,30 +71,24 @@ CLI 入口，处理用户的显式命令：
 
 /ti config [key:value]: 修改 .env 配置项。
 
-/ti config: 读取配置项并执行自检（调用 `src/TimeIndex/utils/doctor.py`，实现类似 openclaw doctor 的效果）。
+/ti config: 读取配置项并执行自检（调用 `src/TimeIndex/utils/doctor.py`）。
 
-### 3.4 技能引擎与执行逻辑 (SKILL.md 实现)
+### 3.4 环境自检模块 (src/TimeIndex/utils/doctor.py)
 
-当用户通过自然语言提出模糊任务时，执行以下工作流：
+功能定位: 环境依赖与权限的“体检中心”。
 
-上下文检索: 从 LanceDB 中 RAG 查询初步日志，获取时间线指导。
-
-意图确认: 依据时间线，利用 LLM 推测任务 ToDo 的可能性，并向用户确认意图。
-
-技能调用: 确认 ToDo 后，动态加载并调用 skills/ 目录下相关的 Skill 脚本完成任务。
+检查项目:
+- Python 版本 (>= 3.12) 与核心依赖包 (lancedb, openai, psutil 等) 安装情况。
+- WMI 权限: 检查是否具有管理员权限。
+- LLM 服务: 验证 Ollama 连通性及 `LLM_MODEL` 是否已拉取。
+- 存储权限: 验证 LanceDB 目录的读写权限。
 
 ## 4. 开发规范提示 (Development Guidelines)
 
-日志规范: 系统日志由 `src/TimeIndex/utils/config.py` 统一管理。受 `.env` 中的 `USER_DEBUG` 开关控制：
-- `USER_DEBUG=false` (默认): 日志级别为 `ERROR`，仅输出到控制台。
-- `USER_DEBUG=true`: 日志级别为 `DEBUG`，且会在用户桌面生成 `timeindex_debug.log` 文件。
+日志规范: 系统日志由 `src/TimeIndex/utils/config.py` 统一管理。
+- `USER_DEBUG=false`: 级别为 `ERROR`，仅输出到控制台。
+- `USER_DEBUG=true`: 级别为 `DEBUG`，同时输出到控制台及**用户桌面**的 `timeindex_debug.log`。
 
-平台限制: WMI 是 Windows 专属接口，请使用 wmi 或 psutil python 库实现，并注意处理权限问题（可能需要管理员权限运行 daemon）。
+LLM 接口: 统一使用 OpenAI SDK 兼容模式。针对深度思考模型，处理器会自动尝试从 `reasoning_content` 字段提取有效载荷。
 
-LLM 接口: 统一使用 OpenAI SDK 的 Python 客户端连接 LLM_BASE_URL，以便最大程度兼容 Ollama 提供的 API。
-
-异步优先: Daemon 的监控和 LLM 请求必须是异步非阻塞的（推荐使用 asyncio），避免 WMI 监控漏掉事件。
-
-容错机制: LanceDB 的读写需注意并发锁问题，特别是 Daemon 的实时写入与闲时重打标进程之间可能存在的冲突。
-
-Doctor 自检: `src/TimeIndex/utils/doctor.py` 必须能够检查：WMI 权限、Ollama 服务连通性、模型(gemma4)是否已拉取、LanceDB 目录读写权限。
+数据容错: 意图推断失败时，系统会生成基于进程名的 `fallback` 记录，确保时间线连续性。

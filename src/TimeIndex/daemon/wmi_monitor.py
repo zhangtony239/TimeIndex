@@ -258,6 +258,22 @@ class WmiCollector:
         windows = []
         pids_with_windows = set()
         
+        # [DEBUG] 排查 NSSM session 隔离导致的窗口标题采集问题
+        import ctypes
+        try:
+            session_id = ctypes.windll.kernel32.ProcessIdToSessionId(
+                ctypes.windll.kernel32.GetCurrentProcessId(),
+                ctypes.byref(ctypes.c_ulong())
+            )
+            active_session = ctypes.windll.kernel32.WTSGetActiveConsoleSessionId()
+            logger.debug(
+                f"[Session检查] 当前进程Session={session_id}, "
+                f"活跃控制台Session={active_session}, "
+                f"{'⚠️ SESSION隔离!' if session_id != active_session else '✅ 同Session'}"
+            )
+        except Exception as e:
+            logger.debug(f"[Session检查] 获取失败: {e}")
+        
         def enum_windows_callback(hwnd, _):
             try:
                 if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd):
@@ -267,6 +283,12 @@ class WmiCollector:
                     
                     # 获取进程名
                     process_name = self._get_process_name(pid)
+                    
+                    # [DEBUG] 打印每个采集到的窗口信息
+                    logger.debug(
+                        f"[窗口采集] PID={pid} | 进程={process_name} | "
+                        f"标题='{title}' | HWND={hwnd}"
+                    )
                     
                     windows.append(WindowInfo(
                         hwnd=hwnd,
@@ -279,6 +301,7 @@ class WmiCollector:
         
         try:
             win32gui.EnumWindows(enum_windows_callback, None)
+            logger.debug(f"[窗口采集] 本轮共采集 {len(windows)} 个窗口")
         except Exception as e:
             logger.error(f"Error enumerating windows: {e}", exc_info=True)
         

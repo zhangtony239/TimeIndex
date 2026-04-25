@@ -164,30 +164,26 @@ class Doctor:
                 api_key=api_key
             )
             
-            # 尝试发送一个简单的请求
-            response = client.chat.completions.create(
-                model="gemma4",
-                messages=[{"role": "user", "content": "test"}],
-                max_tokens=10,
-                timeout=5
-            )
+            # 使用 models.list() 检测连通性（更轻量）
+            models = client.models.list()
+            model_ids = [m.id for m in models.data] if models.data else []
             
-            if response:
+            if model_ids:
                 self._results.append(DoctorCheck(
-                    "Ollama 服务",
+                    "LLM 服务",
                     CheckStatus.OK,
-                    f"连通 (URL: {base_url})"
+                    f"连通 (URL: {base_url}, 模型数: {len(model_ids)})"
                 ))
             else:
                 self._results.append(DoctorCheck(
-                    "Ollama 服务",
-                    CheckStatus.ERROR,
-                    f"响应为空 (URL: {base_url})"
+                    "LLM 服务",
+                    CheckStatus.WARNING,
+                    f"连通但无可用模型 (URL: {base_url})"
                 ))
                 
         except Exception as e:
             self._results.append(DoctorCheck(
-                "Ollama 服务",
+                "LLM 服务",
                 CheckStatus.ERROR,
                 f"不可达: {e}"
             ))
@@ -210,24 +206,23 @@ class Doctor:
             models = client.models.list()
             model_ids = [m.id for m in models.data] if models.data else []
             
-            # 检查 gemma4 是否存在
-            target_model = "gemma4"
-            if any(target_model in m for m in model_ids):
+            # 检查目标模型是否存在（支持子串匹配）
+            if any(config.llm_model in m or m in config.llm_model for m in model_ids):
                 self._results.append(DoctorCheck(
-                    "模型 (gemma4)",
+                    f"模型 ({config.llm_model})",
                     CheckStatus.OK,
-                    f"已拉取"
+                    "已加载"
                 ))
             else:
                 self._results.append(DoctorCheck(
-                    "模型 (gemma4)",
+                    f"模型 ({config.llm_model})",
                     CheckStatus.WARNING,
-                    f"未找到，可用模型: {', '.join(model_ids[:5])}... (运行 'ollama pull gemma4')"
+                    f"未找到，可用模型: {', '.join(model_ids[:5]) if model_ids else '无'}"
                 ))
                 
         except Exception as e:
             self._results.append(DoctorCheck(
-                "模型 (gemma4)",
+                f"模型 ({config.llm_model})",
                 CheckStatus.WARNING,
                 f"无法检查: {e}"
             ))

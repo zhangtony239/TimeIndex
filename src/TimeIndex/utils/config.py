@@ -22,7 +22,8 @@ DEFAULT_CONFIG = {
     "cpu_performance_weight": None,
     "LLM_BASE_URL": "http://localhost:11434/v1",
     "LLM_API_KEY": "ollama",
-    "USER_DEBUG": False,
+    "LLM_MODEL": "gemma-4-e4b",
+    "USER_DEBUG": False
 }
 
 
@@ -81,6 +82,8 @@ class Config:
         
         self._config["LLM_BASE_URL"] = env_vars.get("LLM_BASE_URL", "http://localhost:11434/v1").strip("'\"")
         self._config["LLM_API_KEY"] = env_vars.get("LLM_API_KEY", "ollama").strip("'\"")
+
+        self._config["LLM_MODEL"] = env_vars.get("LLM_MODEL", "gemma-4-e4b").strip("'\"")
         
         user_debug = env_vars.get("USER_DEBUG", "false").lower()
         self._config["USER_DEBUG"] = user_debug == "true"
@@ -213,6 +216,11 @@ class Config:
     def llm_api_key(self) -> str:
         """LLM API 密钥"""
         return self._config["LLM_API_KEY"]
+    
+    @property
+    def llm_model(self) -> str:
+        """LLM 模型名称"""
+        return self._config["LLM_MODEL"]
     
     @property
     def user_debug(self) -> bool:

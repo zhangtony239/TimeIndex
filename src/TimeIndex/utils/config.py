@@ -8,6 +8,7 @@ import os
 import logging
 from typing import List, Dict, Any, Optional
 import yaml
+from ruamel.yaml import YAML
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +141,46 @@ class Config:
         """重新加载配置"""
         self._load()
         logger.info("Config reloaded")
+
+    def update_value(self, key: str, value: str):
+        """
+        靶向更新配置项并保留注释
+        
+        Args:
+            key: 配置项键名
+            value: 配置项值（字符串形式，将尝试转换类型）
+        """
+        if not os.path.exists(self._config_path):
+            logger.error(f"Cannot update config: {self._config_path} not found")
+            return
+
+        # 尝试转换类型
+        try:
+            import ast
+            typed_value = ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            typed_value = value
+
+        ryaml = YAML()
+        ryaml.preserve_quotes = True
+        ryaml.indent(mapping=2, sequence=4, offset=2)
+
+        try:
+            with open(self._config_path, 'r', encoding='utf-8') as f:
+                data = ryaml.load(f)
+            
+            if data is None:
+                data = {}
+            
+            data[key] = typed_value
+            
+            with open(self._config_path, 'w', encoding='utf-8') as f:
+                ryaml.dump(data, f)
+            
+            logger.info(f"Config key '{key}' updated to '{typed_value}' in {self._config_path}")
+            self.reload()
+        except Exception as e:
+            logger.error(f"Failed to update config file: {e}")
 
 
 # 全局配置实例

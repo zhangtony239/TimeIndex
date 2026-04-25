@@ -211,7 +211,7 @@ def config_cmd(
         key = key.strip()
         value = value.strip()
         
-        _update_config_yaml(key, value)
+        config.update_value(key, value)
         console.print(f"[green]配置已更新:[/green] {key} = {value}")
         console.print("[yellow]注意：需要重启守护进程才能生效[/yellow]")
     else:
@@ -234,33 +234,6 @@ def config_cmd(
         
         # 运行自检
         _run_doctor()
-
-def _update_config_yaml(key: str, value: str):
-    """更新 config.yaml 文件中的配置项"""
-    import yaml
-    from pathlib import Path
-    
-    config_path = Path(__file__).parent / "config.yaml"
-    
-    current_config = {}
-    if config_path.exists():
-        with open(config_path, 'r', encoding='utf-8') as f:
-            current_config = yaml.safe_load(f) or {}
-    
-    # 尝试转换类型
-    try:
-        import ast
-        typed_value = ast.literal_eval(value)
-    except (ValueError, SyntaxError):
-        typed_value = value
-        
-    current_config[key] = typed_value
-    
-    with open(config_path, 'w', encoding='utf-8') as f:
-        yaml.safe_dump(current_config, f, allow_unicode=True, sort_keys=False)
-    
-    # 重新加载配置
-    config.reload()
 
 def _run_doctor():
     """运行环境自检"""

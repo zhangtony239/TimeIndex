@@ -143,7 +143,7 @@ def about(
 
 @daemon_app.command("install")
 def daemon_install():
-    """安装守护进程（配置自启动），写入 WMI 过滤设置"""
+    """安装守护进程（注册计划任务），写入 WMI 过滤设置"""
     import subprocess
     from pathlib import Path
     
@@ -163,7 +163,7 @@ def daemon_install():
 
 @daemon_app.command("uninstall")
 def daemon_uninstall():
-    """卸载守护进程"""
+    """卸载守护进程（删除计划任务）"""
     import subprocess
     from pathlib import Path
     
@@ -184,21 +184,17 @@ def daemon_uninstall():
 
 @daemon_app.command("start")
 def daemon_start(verbose: bool = typer.Option(False, "--verbose", "-v", help="启用详细输出")):
-    """启动守护进程（前台运行）"""
+    """启动守护进程"""
     setup_logging(verbose)
     console.print("[bold green]启动守护进程...[/bold green]")
     from TimeIndex.daemon.daemon import Daemon
-    d = Daemon()
+    
+    # 使用统一的运行逻辑
     try:
-        d.start()
-        console.print("守护进程已启动。按 Ctrl+C 停止。")
-        import time
-        while d.is_running:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        console.print("\n[yellow]正在停止守护进程...[/yellow]")
-        d.stop()
-        console.print("[green]守护进程已停止[/green]")
+        Daemon.run_quiet()
+    except Exception as e:
+        console.print(f"[red]守护进程运行出错: {e}[/red]")
+        raise typer.Exit(1)
 
 @app.command(name="config")
 def config_cmd(

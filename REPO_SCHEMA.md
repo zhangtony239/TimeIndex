@@ -13,8 +13,8 @@ TimeIndex/
 ├── uv.lock                 # uv 锁定的依赖版本
 ├── entry.py               # CLI 入口，解析 /ti 系列命令
 ├── src/                   # 源代码目录
-│   ├── install.ps1         # 服务安装脚本 (含自提权)
-│   ├── uninstall.ps1       # 服务卸载脚本 (含自提权)
+│   ├── install.ps1         # 计划任务注册脚本 (使用 Quiet.exe + uv run)
+│   ├── uninstall.ps1       # 计划任务删除脚本
 │   └── TimeIndex/
 │       ├── daemon/         # 后台守护进程模块
 │       │   ├── __init__.py
@@ -65,9 +65,9 @@ CLI 入口，处理用户的显式命令：
 
 /ti about [tags]: 根据标签查询相关活动记录。
 
-/ti daemon install: 安装守护进程（配置自启动），写入 WMI 过滤设置。
+/ti daemon install: 安装守护进程（注册 Quiet.exe 计划任务），写入 WMI 过滤设置。
 
-/ti daemon uninstall: 卸载守护进程。约束：若 daemon 卸载失败，必须终止卸载流程并告警。
+/ti daemon uninstall: 卸载守护进程（删除计划任务）。约束：若 daemon 卸载失败，必须终止卸载流程并告警。
 
 /ti config [key:value]: 修改 .env 配置项。
 

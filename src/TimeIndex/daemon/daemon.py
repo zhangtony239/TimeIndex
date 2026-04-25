@@ -108,6 +108,24 @@ class Daemon:
         self._idle_thread.start()
         
         logger.info("Daemon started")
+
+    @classmethod
+    def run_quiet(cls):
+        """使用 Quiet.exe 封装的启动逻辑 (由计划任务调用)"""
+        daemon = cls(
+            global_blacklist=config.global_blacklist
+        )
+        try:
+            daemon.start()
+            logger.info("Daemon is running in background...")
+            # 保持主线程运行
+            while daemon.is_running:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            daemon.stop()
+        except Exception as e:
+            logger.error(f"Daemon crashed: {e}", exc_info=True)
+            daemon.stop()
     
     def stop(self):
         """停止守护进程"""

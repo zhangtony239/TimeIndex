@@ -8,32 +8,22 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit
 }
 
-$ServiceName = "TimeIndexDaemon"
-$NssmPath = Join-Path $PSScriptRoot "nssm.exe"
+$TaskName = "TimeIndexDaemon"
 
-Write-Host "正在卸载 TimeIndex 守护进程服务..." -ForegroundColor Cyan
+Write-Host "正在删除 TimeIndex 计划任务..." -ForegroundColor Cyan
 
-# 检查 nssm 是否存在
-if (-not (Test-Path $NssmPath)) {
-    Write-Error "找不到 nssm.exe: $NssmPath"
-    exit 1
-}
-
-# 停止服务
-Write-Host "正在停止服务..."
-& $NssmPath stop $ServiceName
-
-# 移除服务
-Write-Host "正在移除服务..."
-& $NssmPath remove $ServiceName confirm
-
-# 验证是否移除成功
-$services = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
-if ($null -eq $services) {
-    Write-Host "服务卸载成功！" -ForegroundColor Green
+# 停止并删除计划任务
+$task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+if ($null -ne $task) {
+    Write-Host "正在停止任务..."
+    Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    
+    Write-Host "正在注销任务..."
+    Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
+    
+    Write-Host "计划任务已成功删除！" -ForegroundColor Green
 } else {
-    Write-Host "错误：服务卸载失败，服务仍然存在。" -ForegroundColor Red
-    exit 1
+    Write-Host "未找到名为 $TaskName 的计划任务。" -ForegroundColor Yellow
 }
 
 pause

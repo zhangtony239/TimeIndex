@@ -1,4 +1,4 @@
-﻿# src/uninstall.ps1
+﻿# src/TimeIndex/uninstall.ps1
 # TimeIndex 守护进程卸载脚本
 
 # 1. 自提权逻辑

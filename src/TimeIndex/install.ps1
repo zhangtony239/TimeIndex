@@ -1,4 +1,4 @@
-﻿# src/install.ps1
+﻿# src/TimeIndex/install.ps1
 # TimeIndex 守护进程安装脚本
 
 # 1. 自提权逻辑
@@ -10,7 +10,7 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 $TaskName = "TimeIndexDaemon"
 $QuietPath = Join-Path $PSScriptRoot "Quiet.exe"
-$ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 
 Write-Host "正在注册 TimeIndex 计划任务 (使用 Quiet.exe)..." -ForegroundColor Cyan
 

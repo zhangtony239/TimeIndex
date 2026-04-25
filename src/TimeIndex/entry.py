@@ -146,8 +146,7 @@ def daemon_install():
     import subprocess
     from pathlib import Path
     
-    # 修正路径：entry.py 在 src/TimeIndex/entry.py，脚本在 src/install.ps1
-    script_path = Path(__file__).parent.parent / "install.ps1"
+    script_path = Path(__file__).parent / "install.ps1"
     if not script_path.exists():
         console.print(f"[red]错误: 找不到安装脚本 {script_path}[/red]")
         raise typer.Exit(1)
@@ -167,8 +166,7 @@ def daemon_uninstall():
     import subprocess
     from pathlib import Path
     
-    # 修正路径：entry.py 在 src/TimeIndex/entry.py，脚本在 src/uninstall.ps1
-    script_path = Path(__file__).parent.parent / "uninstall.ps1"
+    script_path = Path(__file__).parent / "uninstall.ps1"
     if not script_path.exists():
         console.print(f"[red]错误: 找不到卸载脚本 {script_path}[/red]")
         raise typer.Exit(1)

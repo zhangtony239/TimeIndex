@@ -13,10 +13,10 @@ TimeIndex/
 ├── REPO_SCHEMA.md          # 项目架构与规范说明
 ├── SKILL.md                # 技能定义与调用规范
 ├── src/                    # 源代码目录
-│   ├── install.ps1         # 计划任务注册脚本
-│   ├── uninstall.ps1       # 计划任务删除脚本
-│   ├── Quiet.exe           # 静默运行辅助程序
 │   └── TimeIndex/
+│       ├── install.ps1     # 计划任务注册脚本
+│       ├── uninstall.ps1   # 计划任务删除脚本
+│       ├── Quiet.exe       # 静默运行辅助程序
 │       ├── config.yaml     # 全局配置文件
 │       ├── entry.py        # CLI 入口，解析 /ti 系列命令
 │       ├── daemon/         # 后台守护进程模块

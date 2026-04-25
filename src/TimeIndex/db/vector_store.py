@@ -237,7 +237,8 @@ class VectorStore:
             (results["timestamp"] >= start_str) & 
             (results["timestamp"] <= end_str)
         ]
-        results = results.head(limit)
+        # 按时间戳降序排序，取最新的 limit 条
+        results = results.sort_values("timestamp", ascending=False).head(limit)
         
         return self._results_to_records(results)
     

@@ -68,10 +68,10 @@ def get(
     timerange: Optional[TimeRange] = typer.Argument(None, help="预设时间范围"),
     start: Optional[str] = typer.Option(None, "--start", help="开始时间 (ISO 格式)"),
     end: Optional[str] = typer.Option(None, "--end", help="结束时间 (ISO 格式)"),
-    limit: int = typer.Option(50, "--limit", help="返回记录数限制"),
+    limit: int = typer.Option(50, "--limit", help="返回最新记录数限制（按时间倒序）"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="启用详细输出")
 ):
-    """获取指定时间范围的日志摘要"""
+    """获取指定时间范围内最新的日志摘要"""
     setup_logging(verbose)
     store = TimeIndexStore()
     

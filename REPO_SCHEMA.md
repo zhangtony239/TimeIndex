@@ -61,7 +61,7 @@ TimeIndex/
 
 CLI 入口，处理用户的显式命令：
 
-/ti get [timerange|start,end]: 获取指定时间范围的日志摘要。
+/ti get [timerange|start,end]: 获取指定时间范围的日志摘要，按时间**倒序**排列，默认返回最新 **50** 条。
 
 /ti about [tags]: 根据标签查询相关活动记录。
 

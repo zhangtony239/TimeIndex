@@ -8,7 +8,6 @@ TimeIndex 是一个基于本地大模型（如 Gemma-4 运行于 Ollama）的个
 ## 2. 建议的目录结构 (Directory Structure)
 
 TimeIndex/
-├── config.yaml             # 全局配置文件
 ├── pyproject.toml          # 项目配置与依赖管理 (使用 uv 管理依赖)
 ├── uv.lock                 # uv 锁定的依赖版本
 ├── REPO_SCHEMA.md          # 项目架构与规范说明
@@ -18,6 +17,7 @@ TimeIndex/
 │   ├── uninstall.ps1       # 计划任务删除脚本
 │   ├── Quiet.exe           # 静默运行辅助程序
 │   └── TimeIndex/
+│       ├── config.yaml     # 全局配置文件
 │       ├── entry.py        # CLI 入口，解析 /ti 系列命令
 │       ├── daemon/         # 后台守护进程模块
 │       │   ├── __init__.py

@@ -26,9 +26,9 @@ class Config:
             config_path: config.yaml 文件路径
         """
         if config_path is None:
-            # 默认查找项目根目录的 config.yaml
-            root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-            config_path = os.path.join(root_dir, "config.yaml")
+            # 默认查找 src/TimeIndex/config.yaml (与 entry.py 同级)
+            current_dir = os.path.abspath(os.path.dirname(__file__))
+            config_path = os.path.join(current_dir, "..", "config.yaml")
         
         self._config_path = config_path
         self._config: Dict[str, Any] = {}

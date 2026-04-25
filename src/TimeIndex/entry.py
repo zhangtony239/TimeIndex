@@ -242,7 +242,7 @@ def _update_config_yaml(key: str, value: str):
     import yaml
     from pathlib import Path
     
-    config_path = Path("config.yaml")
+    config_path = Path(__file__).parent / "config.yaml"
     
     current_config = {}
     if config_path.exists():

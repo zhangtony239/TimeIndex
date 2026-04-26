@@ -10,6 +10,12 @@ cli/entry.py - CLI 入口 (Typer 实现)
 - /ti config: 读取配置项并执行自检
 """
 
+import sys
+import io
+# 显式告诉 Pylance 这就是个 TextIOWrapper
+if isinstance(sys.stdout, io.TextIOWrapper):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 import logging
 from datetime import datetime, timedelta
 from typing import List, Optional

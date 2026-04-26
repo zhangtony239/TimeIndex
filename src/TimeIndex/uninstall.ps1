@@ -9,7 +9,21 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 }
 
 $TaskName = "TimeIndexDaemon"
+$UserConfigDir = Join-Path $HOME ".timeindex"
 
+# 2. 清理持久化目录
+Write-Host "正在检查持久化目录清理..." -ForegroundColor Cyan
+if (Test-Path $UserConfigDir) {
+    $choice = Read-Host "是否删除持久化配置目录 $UserConfigDir ? (Y/N)"
+    if ($choice -eq 'Y' -or $choice -eq 'y') {
+        Remove-Item -Path $UserConfigDir -Recurse -Force
+        Write-Host "已删除持久化目录。" -ForegroundColor Green
+    } else {
+        Write-Host "已保留持久化目录。" -ForegroundColor Gray
+    }
+}
+
+# 3. 停止并删除计划任务
 Write-Host "正在删除 TimeIndex 计划任务..." -ForegroundColor Cyan
 
 # 停止并删除计划任务

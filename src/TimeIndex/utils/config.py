@@ -27,9 +27,14 @@ class Config:
             config_path: config.yaml 文件路径
         """
         if config_path is None:
-            # 默认查找 src/TimeIndex/config.yaml (与 entry.py 同级)
-            current_dir = os.path.abspath(os.path.dirname(__file__))
-            config_path = os.path.join(current_dir, "..", "config.yaml")
+            # 优先查找用户目录下的 ~/.timeindex/config.yaml
+            user_config_path = os.path.join(os.path.expanduser("~"), ".timeindex", "config.yaml")
+            if os.path.exists(user_config_path):
+                config_path = user_config_path
+            else:
+                # 备选查找 src/TimeIndex/config.yaml (与 entry.py 同级)
+                current_dir = os.path.abspath(os.path.dirname(__file__))
+                config_path = os.path.join(current_dir, "..", "config.yaml")
         
         self._config_path = config_path
         self._config: Dict[str, Any] = {}

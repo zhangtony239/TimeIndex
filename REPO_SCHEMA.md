@@ -17,7 +17,7 @@ TimeIndex/
 │       ├── install.ps1     # 计划任务注册脚本
 │       ├── uninstall.ps1   # 计划任务删除脚本
 │       ├── Quiet.exe       # 静默运行辅助程序
-│       ├── config.yaml     # 全局配置文件
+│       ├── config.yaml     # 默认配置文件 (安装时持久化到 ~/.timeindex/config.yaml)
 │       ├── entry.py        # CLI 入口，解析 /ti 系列命令
 │       ├── daemon/         # 后台守护进程模块
 │       │   ├── __init__.py
@@ -86,9 +86,11 @@ CLI 入口，处理用户的显式命令：
 
 ## 4. 开发规范提示 (Development Guidelines)
 
-日志规范: 系统日志由 `src/TimeIndex/utils/config.py` 统一管理。
-- `USER_DEBUG: false`: 级别为 `ERROR`，仅输出到控制台。
-- `USER_DEBUG: true`: 级别为 `DEBUG`，同时输出到控制台及**用户桌面**的 `timeindex_debug.log`。
+配置与日志规范:
+- 配置文件: 优先读取 `~/.timeindex/config.yaml`，若不存在则回退至 `src/TimeIndex/config.yaml`。
+- 日志管理: 由 `src/TimeIndex/utils/config.py` 统一管理。
+  - `USER_DEBUG: false`: 级别为 `ERROR`，仅输出到控制台。
+  - `USER_DEBUG: true`: 级别为 `DEBUG`，同时输出到控制台及**用户桌面**的 `timeindex_debug.log`。
 
 LLM 接口: 统一使用 OpenAI SDK 兼容模式。针对深度思考模型，处理器会自动尝试从 `reasoning_content` 字段提取有效载荷。
 

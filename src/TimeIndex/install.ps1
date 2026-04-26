@@ -11,7 +11,29 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 $TaskName = "TimeIndexDaemon"
 $QuietPath = Join-Path $PSScriptRoot "Quiet.exe"
 $ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
+$UserConfigDir = Join-Path $HOME ".timeindex"
+$UserConfigPath = Join-Path $UserConfigDir "config.yaml"
+$DefaultConfigPath = Join-Path $PSScriptRoot "config.yaml"
 
+# 2. 配置文件持久化
+Write-Host "正在检查配置文件持久化..." -ForegroundColor Cyan
+if (-not (Test-Path $UserConfigDir)) {
+    New-Item -ItemType Directory -Path $UserConfigDir -Force | Out-Null
+    Write-Host "已创建配置目录: $UserConfigDir" -ForegroundColor Gray
+}
+
+if (-not (Test-Path $UserConfigPath)) {
+    if (Test-Path $DefaultConfigPath) {
+        Copy-Item -Path $DefaultConfigPath -Destination $UserConfigPath
+        Write-Host "已持久化默认配置到: $UserConfigPath" -ForegroundColor Green
+    } else {
+        Write-Warning "找不到默认配置文件: $DefaultConfigPath"
+    }
+} else {
+    Write-Host "配置文件已存在，跳过持久化。" -ForegroundColor Gray
+}
+
+# 3. 注册计划任务
 Write-Host "正在注册 TimeIndex 计划任务 (使用 Quiet.exe)..." -ForegroundColor Cyan
 
 # 检查 Quiet.exe 是否存在

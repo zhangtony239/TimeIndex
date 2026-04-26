@@ -67,6 +67,8 @@ CLI 入口，处理用户的显式命令：
 
 /ti about [tags]: 根据标签查询相关活动记录。
 
+/ti search [query]: 通过语义搜索查找相关活动记录（支持自然语言描述）。
+
 /ti daemon install: 安装守护进程（注册计划任务）。
 
 /ti daemon uninstall: 卸载守护进程（删除计划任务）。约束：若 daemon 卸载失败，必须终止卸载流程并告警。

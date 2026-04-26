@@ -25,6 +25,11 @@ ti get today --limit 20
 ti about <tags>
 ```
 
+```bash
+# 通过语义搜索查找相关活动（支持自然语言描述）
+ti search "我在写代码"
+```
+
 ### 2. 意图确认
 
 依据时间线，利用 LLM 推测任务 ToDo 的可能性，并向用户确认意图。
@@ -91,6 +96,25 @@ ti about browsing --limit 20
 **参数说明：**
 - `tags`: 要查询的标签列表（必填）
 - `--limit`: 返回记录数限制 (默认 50)
+
+### `ti search` - 语义搜索
+
+通过语义搜索查找相关活动记录（支持自然语言描述）。
+
+```bash
+# 搜索关键词
+ti search coding
+
+# 使用自然语言描述搜索
+ti search "我在写代码"
+
+# 限制返回记录数
+ti search "meeting about project x" --limit 5
+```
+
+**参数说明：**
+- `query`: 搜索关键词或自然语言描述（必填）
+- `--limit`: 返回记录数限制 (默认 10)
 
 ### `ti daemon` - 守护进程管理
 

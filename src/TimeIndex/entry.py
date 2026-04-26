@@ -146,6 +146,31 @@ def about(
         console.print(format_record(record))
         console.print()
 
+@app.command()
+def search(
+    query: str = typer.Argument(..., help="搜索关键词或自然语言描述"),
+    limit: int = typer.Option(10, "--limit", help="返回记录数限制"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="启用详细输出")
+):
+    """通过语义搜索查找相关活动记录 (支持自然语言)"""
+    setup_logging(verbose)
+    store = TimeIndexStore()
+    
+    console.print(f"\n[bold green]语义搜索:[/bold green] {query}")
+    console.print("-" * 50)
+    
+    records = store.search_activities(query, limit)
+    
+    if not records:
+        console.print(f"[yellow]未找到与 \"{query}\" 相关的记录[/yellow]")
+        return
+    
+    console.print(f"找到 {len(records)} 条相关记录:\n")
+    for i, record in enumerate(records):
+        console.print(f"[[bold]{i+1}[/bold]]")
+        console.print(format_record(record))
+        console.print()
+
 @daemon_app.command("install")
 def daemon_install():
     """安装守护进程（注册计划任务），写入 WMI 过滤设置"""

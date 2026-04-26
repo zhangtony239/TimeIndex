@@ -10,6 +10,8 @@ TimeIndex 是一个基于本地大模型（如 Gemma-4 运行于 Ollama）的个
 TimeIndex/
 ├── pyproject.toml          # 项目配置与依赖管理 (使用 uv 管理依赖)
 ├── uv.lock                 # uv 锁定的依赖版本
+├── README.md               # 项目说明文档 (英文)
+├── README_zh.md            # 项目说明文档 (中文)
 ├── REPO_SCHEMA.md          # 项目架构与规范说明
 ├── timeindex/              # OpenClaw 技能目录
 │   └── SKILL.md            # 技能定义与调用规范

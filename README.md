@@ -1,69 +1,71 @@
 # TimeIndex
 
-TimeIndex 是一个基于本地大模型（如 gemma-4-e4b）的个人活动自动化索引与任务执行系统。它通过后台静默监控 Windows 系统活动，利用 LLM 理解用户意图并存储到向量数据库中，形成可检索、可分析的个人时间线。
+English | [简体中文](./README_zh.md)
 
-## 🌟 核心特性
+TimeIndex is a personal activity automated indexing and task execution system based on local Large Language Models (e.g., gemma-4-e4b). It silently monitors Windows system activities in the background, uses LLMs to understand user intent, and stores it in a vector database to form a searchable and analyzable personal timeline.
 
--   **静默监控**: 基于 WMI 实时采集进程启动、窗口标题等系统活动日志。
--   **智能理解**: 利用本地 LLM（如 Ollama）自动总结活动摘要，识别用户意图。
--   **语义搜索**: 基于 LanceDB 向量数据库，支持通过自然语言搜索历史活动。
--   **闲时优化**: 系统空闲时自动进行数据聚类与重打标，提升时间线质量。
--   **自动化执行**: 基于时间线理解模糊指令，生成 ToDo 并通过技能系统执行。
+## 🌟 Key Features
 
-## 🏗️ 项目架构
+-   **Silent Monitoring**: Real-time collection of system activity logs such as process starts and window titles based on WMI.
+-   **Intelligent Understanding**: Automatically summarizes activity and identifies user intent using local LLMs (e.g., Ollama).
+-   **Semantic Search**: Supports natural language search of historical activities based on the LanceDB vector database.
+-   **Idle Optimization**: Automatically performs data clustering and re-tagging when the system is idle to improve timeline quality.
+-   **Automated Execution**: Understands vague instructions based on the timeline, generates ToDos, and executes them through the skill system.
 
-项目采用模块化设计，主要包含以下部分：
+## 🏗️ Project Architecture
 
--   **Daemon (守护进程)**: 负责 WMI 监控、LLM 意图推断及数据入库。
--   **Storage (存储层)**: 使用 LanceDB 存储向量化日志，支持高效的 RAG 检索。
--   **CLI (交互层)**: 提供 `/ti` 系列命令，用于查询、搜索及系统管理。
--   **Skills (技能系统)**: 定义自动化任务的执行规范。
+The project adopts a modular design, mainly including the following parts:
 
-## 🚀 快速开始
+-   **Daemon**: Responsible for WMI monitoring, LLM intent inference, and data ingestion.
+-   **Storage**: Uses LanceDB to store vectorized logs, supporting efficient RAG retrieval.
+-   **CLI**: Provides the `/ti` series of commands for querying, searching, and system management.
+-   **Skills**: Defines execution standards for automated tasks.
 
-### 环境要求
+## 🚀 Quick Start
+
+### Prerequisites
 
 -   Python >= 3.12
--   [uv](https://github.com/astral-sh/uv) (推荐的包管理工具)
--   [Ollama](https://ollama.com/)/[LMStudio](https://lmstudio.ai/) (需预先拉取指定的 LLM 模型)
--   Windows 操作系统 (需管理员权限以运行 WMI 监控)
+-   [uv](https://github.com/astral-sh/uv) (Recommended package management tool)
+-   [Ollama](https://ollama.com/)/[LMStudio](https://lmstudio.ai/) (Specified LLM models need to be pulled in advance)
+-   Windows OS (Administrator privileges required for WMI monitoring)
 
-### 安装
+### Installation
 
-1.  克隆仓库：
+1.  Clone the repository:
     ```bash
     git clone https://github.com/your-repo/TimeIndex.git
     cd TimeIndex
     ```
 
-2.  安装并注册工具：
+2.  Install and register the tool:
     ```bash
     uv tool install .
     ```
 
-3.  安装守护进程：
+3.  Install the daemon:
     ```bash
     ti daemon install
     ```
 
-## 🛠️ 常用命令
+## 🛠️ Common Commands
 
-TimeIndex 通过 `/ti` 系列命令进行交互：
+TimeIndex interacts through the `/ti` series of commands:
 
--   `ti get [timerange]`: 获取指定范围的日志摘要（默认最新 50 条）。
--   `ti search [query]`: 通过自然语言语义搜索活动记录。
--   `ti about [tags]`: 根据标签查询相关活动。
--   `ti config`: 查看配置并执行环境自检。
--   `ti daemon [install|uninstall]`: 安装或卸载后台守护进程。
+-   `ti get [timerange]`: Get activity summaries for a specified range (default: latest 50).
+-   `ti search [query]`: Search activity records using natural language semantic search.
+-   `ti about [tags]`: Query related activities based on tags.
+-   `ti config`: View configuration and perform environment self-check.
+-   `ti daemon [install|uninstall]`: Install or uninstall the background daemon.
 
-## ⚙️ 配置说明
+## ⚙️ Configuration
 
-配置文件位于 `~/.timeindex/config.yaml`（首次运行会自动创建）。
+The configuration file is located at `~/.timeindex/config.yaml` (automatically created on first run).
 
--   `LLM_MODEL`: 指定使用的 Ollama 模型。
--   `USER_DEBUG`: 开启后将在桌面生成详细调试日志。
--   `rag_keepalive`: RAG 数据保留时长。
+-   `LLM_MODEL`: Specifies the Ollama model to use.
+-   `USER_DEBUG`: When enabled, detailed debug logs will be generated on the desktop.
+-   `rag_keepalive`: Retention duration for RAG data.
 
-## 📄 开源协议
+## 📄 License
 
 [MIT License](LICENSE)

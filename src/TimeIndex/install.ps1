@@ -20,15 +20,15 @@ if (-not (Test-Path $QuietPath)) {
     exit 1
 }
 
-# 检查 uv 是否安装 (假设在 PATH 中)
-if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
-    Write-Error "找不到 uv 命令，请先安装 uv。"
+# 检查 ti 是否安装 (假设已通过 uv tool install 全局注册)
+if (-not (Get-Command ti -ErrorAction SilentlyContinue)) {
+    Write-Error "找不到 ti 命令，请先通过 'uv tool install .' 安装。"
     exit 1
 }
 
 # 创建计划任务
 # 使用当前用户运行，登录时启动
-$Action = New-ScheduledTaskAction -Execute $QuietPath -Argument "uv run entry.py daemon start" -WorkingDirectory $ProjectRoot
+$Action = New-ScheduledTaskAction -Execute $QuietPath -Argument "ti daemon start" -WorkingDirectory $ProjectRoot
 $Trigger = New-ScheduledTaskTrigger -AtLogOn
 $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0
 

@@ -239,48 +239,8 @@ def config_cmd(
         console.print(table)
         
         # 运行自检
-        _run_doctor()
-
-def _run_doctor():
-    """运行环境自检"""
-    console.print("\n[bold]环境自检:[/bold]")
-    console.print("-" * 50)
-    
-    # 检查 Ollama 连通性
-    console.print("  [1] 检查 Ollama 服务连通性...")
-    try:
-        from .daemon.llm_processor import LLMProcessor
-        processor = LLMProcessor()
-        if processor.is_available():
-            console.print("      [green]✓ Ollama 服务正常[/green]")
-        else:
-            console.print("      [red]✗ Ollama 服务不可用[/red]")
-            console.print(f"        请检查 LLM_BASE_URL: {config.llm_base_url}")
-    except Exception as e:
-        console.print(f"      [red]✗ Ollama 检查失败: {e}[/red]")
-    
-    # 检查 LanceDB
-    console.print("  [2] 检查 LanceDB 数据库...")
-    try:
-        store = TimeIndexStore()
-        count = store.get_count()
-        console.print(f"      [green]✓ LanceDB 正常，当前记录数: {count}[/green]")
-    except Exception as e:
-        console.print(f"      [red]✗ LanceDB 检查失败: {e}[/red]")
-    
-    # 检查 WMI 权限
-    console.print("  [3] 检查 WMI 权限...")
-    try:
-        import ctypes
-        is_admin = bool(ctypes.windll.shell32.IsUserAnAdmin())
-        if is_admin:
-            console.print("      [green]✓ 当前以管理员权限运行[/green]")
-        else:
-            console.print("      [yellow]⚠ 当前非管理员权限，部分 WMI 功能可能不可用[/yellow]")
-    except Exception as e:
-        console.print(f"      [red]✗ WMI 权限检查失败: {e}[/red]")
-    
-    console.print()
+        from .utils.doctor import run_doctor
+        run_doctor()
 
 if __name__ == "__main__":
     app()

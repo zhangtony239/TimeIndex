@@ -29,6 +29,7 @@ def test_config():
     print(f"rag_keepalive: {config.rag_keepalive}")
     print(f"retag_mode: {config.retag_mode}")
     print(f"LLM_BASE_URL: {config.llm_base_url}")
+    print(f"EMBEDDING_MODEL: {config.embedding_model}")
     print("配置加载测试完成!")
     print("=" * 50)
 
@@ -95,6 +96,30 @@ def test_llm_processor():
     print("LLM 处理器测试完成!")
     print("=" * 50)
 
+# 测试 Embedding 提供者
+def test_embedding_provider():
+    print("=" * 50)
+    print("测试 Embedding 提供者...")
+    from TimeIndex.db.embedding_provider import embedding_provider
+    
+    test_text = "正在使用 VSCode 编写 Python 代码"
+    print(f"测试文本: {test_text}")
+    
+    embedding = embedding_provider.get_embedding(test_text)
+    if embedding:
+        print(f"成功获取 Embedding, 维度: {len(embedding)}")
+        print(f"前 5 个数值: {embedding[:5]}")
+    else:
+        print("获取 Embedding 失败!")
+        
+    # 测试批量
+    texts = ["第一条记录", "第二条记录"]
+    embeddings = embedding_provider.get_embeddings(texts)
+    print(f"批量获取结果数量: {len(embeddings)}")
+    
+    print("Embedding 提供者测试完成!")
+    print("=" * 50)
+
 # 测试守护进程
 def test_daemon():
     print("=" * 50)
@@ -119,6 +144,38 @@ def test_daemon():
     print("守护进程测试完成!")
     print("=" * 50)
 
+# 测试向量搜索
+def test_vector_search():
+    print("=" * 50)
+    print("测试向量搜索 (Semantic Search)...")
+    from TimeIndex.db.vector_store import timeindex_store
+    from datetime import datetime
+    
+    # 1. 插入一条测试数据
+    test_id = f"test_v_{int(time.time())}"
+    record = {
+        "id": test_id,
+        "timestamp": datetime.now().isoformat(),
+        "summary": "这是一个关于向量搜索的测试记录",
+        "tags": ["test", "vector"],
+        "primary_app": "pytest"
+    }
+    
+    print(f"插入测试记录: {test_id}")
+    timeindex_store.add_activity_record(record)
+    
+    # 2. 执行语义搜索
+    query = "向量测试"
+    print(f"执行语义搜索: '{query}'")
+    results = timeindex_store.search_activities(query, limit=5)
+    
+    print(f"搜索结果数量: {len(results)}")
+    for i, res in enumerate(results):
+        print(f"  结果 {i+1}: {res.get('summary')} (ID: {res.get('id')})")
+        
+    print("向量搜索测试完成!")
+    print("=" * 50)
+
 if __name__ == "__main__":
     print("TimeIndex Daemon 模块测试")
     print()
@@ -129,6 +186,8 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "full":
         test_wmi_collector()
         test_llm_processor()
+        test_embedding_provider()
+        test_vector_search()
         test_daemon()
     else:
         print("运行 'python test_daemon.py full' 执行完整测试")

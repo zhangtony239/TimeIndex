@@ -27,24 +27,23 @@ from ..utils.config import config
 logger = logging.getLogger(__name__)
 
 # LanceDB 表结构定义
-# 包含: id, timestamp, summary, tags, confidence, primary_app,
-#       active_windows, process_events, hardware,
-#       refined_tags, refined_summary, cluster_id, vector
-TIMEINDEX_SCHEMA = pa.schema([
-    pa.field("id", pa.string()),
-    pa.field("timestamp", pa.string()),
-    pa.field("summary", pa.string()),
-    pa.field("tags", pa.list_(pa.string())),
-    pa.field("confidence", pa.float32()),
-    pa.field("primary_app", pa.string()),
-    pa.field("active_windows", pa.list_(pa.string())),
-    pa.field("process_events", pa.list_(pa.string())),
-    pa.field("hardware", pa.string()),  # JSON 字符串
-    pa.field("refined_tags", pa.list_(pa.string())),
-    pa.field("refined_summary", pa.string()),
-    pa.field("cluster_id", pa.string()),
-    pa.field("vector", pa.list_(pa.float32(), 384)),  # 默认 384 维向量 (all-MiniLM-L6-v2)
-])
+def get_schema(vector_dim: int = 768) -> pa.Schema:
+    """获取指定向量维度的 Schema"""
+    return pa.schema([
+        pa.field("id", pa.string()),
+        pa.field("timestamp", pa.string()),
+        pa.field("summary", pa.string()),
+        pa.field("tags", pa.list_(pa.string())),
+        pa.field("confidence", pa.float32()),
+        pa.field("primary_app", pa.string()),
+        pa.field("active_windows", pa.list_(pa.string())),
+        pa.field("process_events", pa.list_(pa.string())),
+        pa.field("hardware", pa.string()),  # JSON 字符串
+        pa.field("refined_tags", pa.list_(pa.string())),
+        pa.field("refined_summary", pa.string()),
+        pa.field("cluster_id", pa.string()),
+        pa.field("vector", pa.list_(pa.float32(), vector_dim)),
+    ])
 
 # 默认 LanceDB 存储路径
 DEFAULT_LANCEDB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".lancedb")
@@ -57,7 +56,7 @@ class VectorStore:
     提供基础的向量数据库操作，包括插入、查询、删除等。
     """
     
-    def __init__(self, db_path: Optional[str] = None, vector_dim: int = 384):
+    def __init__(self, db_path: Optional[str] = None, vector_dim: int = 768):
         """
         初始化向量存储
         
@@ -105,7 +104,7 @@ class VectorStore:
             # 创建新表
             self._table = db.create_table(
                 table_name,
-                schema=TIMEINDEX_SCHEMA,
+                schema=get_schema(self._vector_dim),
                 mode="create"
             )
             logger.info(f"Created new table: {table_name}")

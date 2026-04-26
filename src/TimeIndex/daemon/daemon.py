@@ -16,6 +16,7 @@ from queue import Queue, Empty
 from .wmi_monitor import WmiCollector, SystemSnapshot, ProcessEvent
 from .llm_processor import LLMProcessor
 from ..db.vector_store import TimeIndexStore
+from ..db.embedding_provider import embedding_provider
 from ..utils.config import config
 
 logger = logging.getLogger(__name__)
@@ -173,10 +174,16 @@ class Daemon:
             # 1. 调用 LLM 进行意图推测
             intent = self.llm_processor.infer_intent(snapshot)
             
-            # 2. 构建记录
+            # 2. 获取 Embedding
+            summary = intent.get("summary", "")
+            if summary:
+                logger.debug(f"Generating embedding for summary: {summary}")
+                intent["vector"] = embedding_provider.get_embedding(summary)
+            
+            # 3. 构建记录
             record = self._build_record(snapshot, intent)
             
-            # 3. 写入数据库 (需要加锁)
+            # 4. 写入数据库 (需要加锁)
             with self._db_lock:
                 self._write_to_db(record)
             
@@ -220,7 +227,8 @@ class Daemon:
             } if snapshot.hardware else {},
             "refined_tags": None,
             "refined_summary": None,
-            "cluster_id": None
+            "cluster_id": None,
+            "vector": intent.get("vector")
         }
     
     def _write_to_db(self, record: Dict[str, Any]):

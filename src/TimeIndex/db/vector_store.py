@@ -315,7 +315,7 @@ class VectorStore:
         
         Args:
             query: 搜索查询文本
-            query_vector: 查询向量 (如果为 None，需要外部提供嵌入)
+            query_vector: 查询向量 (如果为 None，将尝试自动生成)
             limit: 返回记录数限制
             table_name: 表名
             
@@ -324,12 +324,18 @@ class VectorStore:
         """
         table = self.get_table(table_name)
         
+        if not query_vector and query:
+            from .embedding_provider import embedding_provider
+            logger.debug(f"Generating embedding for search query: {query}")
+            query_vector = embedding_provider.get_embedding(query)
+
         if query_vector:
             results = table.search(query_vector).limit(limit).to_pandas()
         else:
             # 如果没有向量，回退到全文搜索
             results = table.search().to_pandas()
-            results = results[results["summary"].str.contains(query, case=False, na=False)]
+            if query:
+                results = results[results["summary"].str.contains(query, case=False, na=False)]
             results = results.head(limit)
         
         return self._results_to_records(results)

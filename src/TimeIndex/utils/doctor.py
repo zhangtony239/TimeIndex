@@ -68,6 +68,7 @@ class Doctor:
         self._check_wmi_permission()
         self._check_ollama_connectivity()
         self._check_model_available()
+        self._check_embedding_model_available()
         self._check_lancedb_path()
         
         return self._results
@@ -228,6 +229,47 @@ class Doctor:
                 f"无法检查: {e}"
             ))
     
+    def _check_embedding_model_available(self):
+        """检查 Embedding 模型是否已拉取"""
+        model_name = "unknown"
+        try:
+            from ..utils.config import config
+            from openai import OpenAI
+            
+            model_name = config.embedding_model
+            base_url = config.llm_base_url
+            api_key = config.llm_api_key
+            
+            client = OpenAI(
+                base_url=base_url,
+                api_key=api_key
+            )
+            
+            # 列出可用模型
+            models = client.models.list()
+            model_ids = [m.id for m in models.data] if models.data else []
+            
+            # 检查目标模型是否存在
+            if any(model_name in m or m in model_name for m in model_ids):
+                self._results.append(DoctorCheck(
+                    f"Embedding 模型 ({model_name})",
+                    CheckStatus.OK,
+                    "已加载"
+                ))
+            else:
+                self._results.append(DoctorCheck(
+                    f"Embedding 模型 ({model_name})",
+                    CheckStatus.WARNING,
+                    f"未找到，可用模型: {', '.join(model_ids[:5]) if model_ids else '无'}"
+                ))
+                
+        except Exception as e:
+            self._results.append(DoctorCheck(
+                f"Embedding 模型 ({model_name})",
+                CheckStatus.WARNING,
+                f"无法检查: {e}"
+            ))
+
     def _check_lancedb_path(self):
         """检查 LanceDB 目录读写权限"""
         try:

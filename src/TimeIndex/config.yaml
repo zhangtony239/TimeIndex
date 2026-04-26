@@ -18,13 +18,16 @@ retag_mode: 20
 #cpu_performance_weight: null
 
 #Ollama兼容后端api
-LLM_BASE_URL: "http://localhost:11434/v1"
+LLM_BASE_URL: "http://127.0.0.1:1234/v1"
 
 #Ollama key（可选）
 #LLM_API_KEY: "ollama"
 
 #LLM模型名称
 LLM_MODEL: "gemma-4-e4b"
+
+#Embedding模型名称
+EMBEDDING_MODEL: "text-embedding-embeddinggemma-300m"
 
 #Debug模式开关
 USER_DEBUG: false

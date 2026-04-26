@@ -138,6 +138,11 @@ class Config:
         return self._config.get("LLM_MODEL", "gemma-4-e4b")
     
     @property
+    def embedding_model(self) -> str:
+        """Embedding 模型名称"""
+        return self._config.get("EMBEDDING_MODEL", "text-embedding-embeddinggemma-300m")
+
+    @property
     def user_debug(self) -> bool:
         """Debug 模式开关"""
         return self._config.get("USER_DEBUG", False)

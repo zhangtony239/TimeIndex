@@ -26,7 +26,8 @@ TimeIndex/
 │       │   └── llm_processor.py # 与 Ollama 交互
 │       ├── db/             # 数据库模块
 │       │   ├── __init__.py
-│       │   └── vector_store.py # 封装 LanceDB SDK
+│       │   ├── vector_store.py # 封装 LanceDB SDK
+│       │   └── embedding_provider.py # 对接 v1/embeddings 接口
 │       └── utils/          # 工具类
 │           ├── __init__.py
 │           ├── config.py   # config.yaml 解析与全局配置加载
@@ -48,11 +49,11 @@ TimeIndex/
 
 闲时任务 (Idle Processing): 监控系统空闲状态。在闲时，提取 LanceDB 中的初级数据，结合页标题、详细参数等，调用 LLM 进行聚类重打标，优化数据库结构。
 
-### 3.2 存储与 RAG 层 (src/TimeIndex/db/vector_store.py)
+### 3.2 存储与 RAG 层 (src/TimeIndex/db/vector_store.py & src/TimeIndex/db/embedding_provider.py)
 
-技术栈: LanceDB SDK
+技术栈: LanceDB SDK, OpenAI SDK (Embedding)
 
-功能定位: 存储带时间戳的向量化日志。
+功能定位: 存储带时间戳的向量化日志，并提供文本向量化能力。
 
 生命周期管理: 根据 `config.yaml` 中的 `rag_keepalive` 和 `rag_timeout` 自动清理或归档过期日志。
 

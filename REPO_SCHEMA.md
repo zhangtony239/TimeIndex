@@ -11,7 +11,8 @@ TimeIndex/
 ├── pyproject.toml          # 项目配置与依赖管理 (使用 uv 管理依赖)
 ├── uv.lock                 # uv 锁定的依赖版本
 ├── REPO_SCHEMA.md          # 项目架构与规范说明
-├── SKILL.md                # 技能定义与调用规范
+├── timeindex/              # OpenClaw 技能目录
+│   └── SKILL.md            # 技能定义与调用规范
 ├── src/                    # 源代码目录
 │   └── TimeIndex/
 │       ├── install.ps1     # 计划任务注册脚本

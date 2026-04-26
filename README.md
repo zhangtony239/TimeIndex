@@ -48,6 +48,13 @@ The project adopts a modular design, mainly including the following parts:
     ti daemon install
     ```
 
+4.  Install the `timeindex` skill to OpenClaw/ZeroClaw:
+    - For **OpenClaw**: Copy the `timeindex` directory to the OpenClaw `skills` folder.
+    - For **ZeroClaw**:
+      ```bash
+      zeroclaw skills install ./timeindex
+      ```
+
 ## 🛠️ Common Commands
 
 TimeIndex interacts through the `/ti` series of commands:

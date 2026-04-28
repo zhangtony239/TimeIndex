@@ -44,7 +44,7 @@ The project adopts a modular design, mainly including the following parts:
     ```
 
 3.  Configure LLM:
-    > ⚠️ **Important**: Before installing the daemon, ensure `LLM_BASE_URL` is correctly configured (https://example.com/v1).
+    > ⚠️ **Important**: Before installing the daemon, ensure `LLM_BASE_URL` is correctly configured.
     ```bash
     ti config LLM_BASE_URL:http://localhost:11434/v1
     ```

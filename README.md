@@ -43,12 +43,18 @@ The project adopts a modular design, mainly including the following parts:
     uv tool install .
     ```
 
-3.  Install the daemon:
+3.  Configure LLM:
+    > ⚠️ **Important**: Before installing the daemon, ensure `LLM_BASE_URL` is correctly configured (https://example.com/v1).
+    ```bash
+    ti config LLM_BASE_URL:http://localhost:11434/v1
+    ```
+
+4.  Install the daemon:
     ```bash
     ti daemon install
     ```
 
-4.  Install the `timeindex` skill to OpenClaw/ZeroClaw:
+5.  Install the `timeindex` skill to OpenClaw/ZeroClaw:
     - For **OpenClaw**: Copy the `timeindex` directory to the OpenClaw `skills` folder.
     - For **ZeroClaw**:
       ```bash

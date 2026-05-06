@@ -2,15 +2,14 @@
 
 English | [简体中文](./README_zh.md)
 
-TimeIndex is a personal activity automated indexing and task execution system based on local Large Language Models (e.g., gemma-4-e4b). It silently monitors Windows system activities in the background, uses LLMs to understand user intent, and stores it in a vector database to form a searchable and analyzable personal timeline.
+TimeIndex is a personal activity automated indexing system based on local Large Language Models (e.g., gemma-4-e4b). It silently monitors Windows system activities in the background, uses LLMs to understand user intent, and stores it in a vector database to form a searchable and analyzable personal timeline.
 
 ## 🌟 Key Features
 
 -   **Silent Monitoring**: Real-time collection of system activity logs such as process starts and window titles based on WMI.
 -   **Intelligent Understanding**: Automatically summarizes activity and identifies user intent using local LLMs (e.g., Ollama).
 -   **Semantic Search**: Supports natural language search of historical activities based on the LanceDB vector database.
--   **Idle Optimization**: Automatically performs data clustering and re-tagging when the system is idle to improve timeline quality.
--   **Automated Execution**: Understands vague instructions based on the timeline, generates ToDos, and executes them through the skill system.
+-   **Idle Optimization(TODO)**: Automatically performs data clustering and re-tagging when the system is idle to improve timeline quality.
 
 ## 🏗️ Project Architecture
 

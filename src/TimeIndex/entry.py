@@ -259,6 +259,8 @@ def config_cmd(
         table.add_row("cpu_performance_weight", str(config.cpu_performance_weight))
         table.add_row("LLM_BASE_URL", config.llm_base_url)
         table.add_row("LLM_API_KEY", '*' * len(config.llm_api_key) if config.llm_api_key else "(未设置)")
+        table.add_row("LLM_MODEL", config.llm_model)
+        table.add_row("EMBEDDING_MODEL", config.embedding_model)
         table.add_row("USER_DEBUG", str(config.user_debug))
         
         console.print(table)

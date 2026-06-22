@@ -17,6 +17,12 @@ retag_mode: 20
 #重打标CPU异构权重
 #cpu_performance_weight: null
 
+#闲时触发阈值（秒）：用户无键鼠输入超过该时间视为闲时，触发闲时任务
+IDLE_TIMEOUT: 300
+
+#重打标开关：闲时调用LLM将ti get的活动记录提炼合并为更高层摘要
+SUMMARY: true
+
 #Ollama兼容后端api
 LLM_BASE_URL: "http://127.0.0.1:1234/v1"
 

@@ -121,7 +121,20 @@ class Config:
     def cpu_performance_weight(self) -> Optional[List[int]]:
         """CPU 异构权重"""
         return self._config.get("cpu_performance_weight")
-    
+
+    @property
+    def idle_timeout(self) -> int:
+        """闲时触发阈值（秒）：用户无键鼠输入超过该时间视为闲时"""
+        try:
+            return int(self._config.get("IDLE_TIMEOUT", 300))
+        except (TypeError, ValueError):
+            return 300
+
+    @property
+    def summary_enabled(self) -> bool:
+        """重打标开关：闲时调用 LLM 提炼合并活动记录为摘要"""
+        return bool(self._config.get("SUMMARY", True))
+
     @property
     def llm_base_url(self) -> str:
         """LLM API 地址"""

@@ -156,6 +156,12 @@ ti config LLM_BASE_URL:http://localhost:11434/v1
 
 # 修改重打标模式
 ti config retag_mode:30
+
+# 修改闲时阈值（秒）
+ti config IDLE_TIMEOUT=600
+
+# 开关二阶段摘要（闲时重打标）
+ti config SUMMARY=false
 ```
 
 **配置项说明：**
@@ -165,6 +171,8 @@ ti config retag_mode:30
 - `rag_timeout`: RAG 日志超时阈值（天）
 - `retag_mode`: 重打标 CPU 空闲阈值
 - `cpu_performance_weight`: CPU 异构权重
+- `IDLE_TIMEOUT`: 闲时触发阈值（秒），用户无键鼠输入超过该时间视为闲时，触发闲时任务 (默认: 300)
+- `SUMMARY`: 重打标（摘要）开关，控制闲时是否调用 LLM 对活动记录进行聚类重打标 (默认: true)
 - `LLM_BASE_URL`: LLM API 地址 (默认: http://localhost:11434/v1)
 - `LLM_API_KEY`: LLM API 密钥 (默认: ollama)
 

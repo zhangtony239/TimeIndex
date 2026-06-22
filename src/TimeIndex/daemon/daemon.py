@@ -22,6 +22,31 @@ from ..utils.config import config
 logger = logging.getLogger(__name__)
 
 
+class _LASTINPUTINFO(ctypes.Structure):
+    """Windows GetLastInputInfo 所需的结构体"""
+    _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
+
+
+def get_idle_seconds() -> float:
+    """
+    获取用户无键鼠输入的空闲时长（秒）
+
+    基于 Windows GetLastInputInfo，反映真实的"用户闲时"，
+    而非 WMI 采集节奏（采集器每数秒产生一次快照，会持续刷新活动时间）。
+    供闲时任务调度使用。
+    """
+    try:
+        info = _LASTINPUTINFO()
+        info.cbSize = ctypes.sizeof(info)
+        if not ctypes.windll.user32.GetLastInputInfo(ctypes.byref(info)):
+            return 0.0
+        elapsed_ms = ctypes.windll.kernel32.GetTickCount() - info.dwTime
+        return max(0.0, elapsed_ms / 1000.0)
+    except Exception as e:
+        logger.debug(f"get_idle_seconds failed: {e}")
+        return 0.0
+
+
 class Daemon:
     """
     后台守护进程核心
@@ -30,24 +55,27 @@ class Daemon:
     - 启动 WMI 监控采集系统事件
     - 调用 LLM 进行意图推测
     - 将结果写入向量数据库 (LanceDB)
-    - 闲时任务：聚类重打标优化数据
+    - 闲时任务：聚类重打标（摘要），将初级数据提炼合并为更有用的信息
+      （受 SUMMARY 开关与 IDLE_TIMEOUT 阈值控制）
     """
     
     def __init__(
         self,
         wmi_interval: int = 5,
-        idle_threshold: int = 300,  # 5分钟无活动视为空闲
+        idle_threshold: Optional[int] = None,
         retag_batch_size: int = 20,
-        global_blacklist: Optional[List[str]] = None
+        global_blacklist: Optional[List[str]] = None,
+        summary_enabled: Optional[bool] = None
     ):
         """
         初始化守护进程
         
         Args:
             wmi_interval: WMI 采集间隔（秒）
-            idle_threshold: 空闲阈值（秒）
+            idle_threshold: 闲时阈值（秒），为 None 时读取 config.idle_timeout
             retag_batch_size: 重打标批次大小
             global_blacklist: 全局屏蔽的进程名列表
+            summary_enabled: 重打标开关，为 None 时读取 config.summary_enabled
         """
         self.wmi_collector = WmiCollector(
             interval=wmi_interval,
@@ -65,7 +93,8 @@ class Daemon:
         
         # 状态标志
         self._is_running = False
-        self._idle_threshold = idle_threshold
+        self._idle_threshold = idle_threshold if idle_threshold is not None else config.idle_timeout
+        self._summary_enabled = summary_enabled if summary_enabled is not None else config.summary_enabled
         self._last_activity_time = time.time()
         self._retag_batch_size = retag_batch_size
         
@@ -75,7 +104,10 @@ class Daemon:
         # 注册回调
         self.wmi_collector.add_callback(self._on_snapshot)
         
-        logger.info("Daemon initialized")
+        logger.info(
+            f"Daemon initialized (idle_timeout={self._idle_threshold}s, "
+            f"summary={self._summary_enabled})"
+        )
     
     def start(self):
         """启动守护进程"""
@@ -114,7 +146,9 @@ class Daemon:
     def run_quiet(cls):
         """使用 Quiet.exe 封装的启动逻辑 (由计划任务调用)"""
         daemon = cls(
-            global_blacklist=config.global_blacklist
+            global_blacklist=config.global_blacklist,
+            idle_threshold=config.idle_timeout,
+            summary_enabled=config.summary_enabled,
         )
         try:
             daemon.start()
@@ -237,23 +271,34 @@ class Daemon:
         self.db_store.add_activity_record(record)
     
     def _idle_loop(self):
-        """闲时任务循环"""
+        """闲时任务循环
+
+        基于真实用户输入空闲时长（GetLastInputInfo）判定闲时，
+        用户无键鼠输入超过 IDLE_TIMEOUT 即触发重打标任务。
+        """
         while self._is_running:
             try:
-                # 检查是否空闲
-                idle_time = time.time() - self._last_activity_time
-                if idle_time >= self._idle_threshold:
+                if get_idle_seconds() >= self._idle_threshold:
                     self._run_retag_task()
-                
+
                 # 每60秒检查一次
                 time.sleep(60)
-                
+
             except Exception as e:
                 logger.error(f"Error in idle_loop: {e}", exc_info=True)
     
     def _run_retag_task(self):
-        """执行重打标任务"""
-        logger.info("Starting idle retag task...")
+        """执行闲时重打标任务
+
+        将 LanceDB 中的初级活动记录交由 LLM 聚类重打标，
+        生成 refined_tags / refined_summary / cluster_id，把数据提炼合并为更有用的信息。
+        受 SUMMARY 开关控制：关闭时不执行，避免无谓的 LLM 调用。
+        """
+        if not self._summary_enabled:
+            logger.debug("Summary(retag) disabled by SUMMARY switch, skip")
+            return
+
+        logger.info("Starting idle summary(retag) task...")
         
         try:
             # 1. 从数据库读取待重打标的记录
@@ -271,7 +316,7 @@ class Daemon:
             with self._db_lock:
                 self._update_retag_records(retagged)
             
-            logger.info(f"Retag task completed for {len(retagged)} records")
+            logger.info(f"Summary(retag) task completed for {len(retagged)} records")
             
         except Exception as e:
             logger.error(f"Error in retag task: {e}", exc_info=True)
@@ -299,5 +344,5 @@ class Daemon:
     
     @property
     def idle_time(self) -> float:
-        """获取当前空闲时间（秒）"""
-        return time.time() - self._last_activity_time
+        """获取当前用户输入空闲时间（秒）"""
+        return get_idle_seconds()

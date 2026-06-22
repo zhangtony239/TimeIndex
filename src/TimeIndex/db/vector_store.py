@@ -45,6 +45,7 @@ def get_schema(vector_dim: int = 768) -> pa.Schema:
         pa.field("vector", pa.list_(pa.float32(), vector_dim)),
     ])
 
+
 # 默认 LanceDB 存储路径
 DEFAULT_LANCEDB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".lancedb")
 
@@ -240,7 +241,7 @@ class VectorStore:
         results = results.sort_values("timestamp", ascending=False).head(limit)
         
         return self._results_to_records(results)
-    
+
     def query_by_tags(
         self,
         tags: List[str],
@@ -366,7 +367,7 @@ class VectorStore:
         results = results.head(batch_size)
         
         return self._results_to_records(results)
-    
+
     def delete_by_time_range(
         self,
         before_time: datetime,
@@ -661,7 +662,7 @@ class TimeIndexStore:
             更新的记录数
         """
         return self._store.update_batch(records)
-    
+
     def cleanup(self) -> int:
         """
         清理过期记录

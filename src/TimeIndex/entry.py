@@ -257,6 +257,8 @@ def config_cmd(
         table.add_row("rag_timeout", f"{config.rag_timeout} 天")
         table.add_row("retag_mode", str(config.retag_mode))
         table.add_row("cpu_performance_weight", str(config.cpu_performance_weight))
+        table.add_row("IDLE_TIMEOUT", f"{config.idle_timeout} 秒")
+        table.add_row("SUMMARY", str(config.summary_enabled))
         table.add_row("LLM_BASE_URL", config.llm_base_url)
         table.add_row("LLM_API_KEY", '*' * len(config.llm_api_key) if config.llm_api_key else "(未设置)")
         table.add_row("LLM_MODEL", config.llm_model)

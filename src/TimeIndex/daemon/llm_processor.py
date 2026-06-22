@@ -186,7 +186,7 @@ class LLMProcessor:
         except Exception as e:
             logger.error(f"Error retagging cluster: {e}", exc_info=True)
             return records
-    
+
     def _build_intent_prompt(self, snapshot: SystemSnapshot) -> str:
         """构建意图推测的提示词"""
         lines = [f"时间: {snapshot.timestamp.strftime('%Y-%m-%d %H:%M:%S')}\n"]

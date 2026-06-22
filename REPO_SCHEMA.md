@@ -50,7 +50,7 @@ TimeIndex/
 
 初始入库: 将总结后的数据通过 `vector_store.py` 写入 LanceDB。
 
-闲时任务 (Idle Processing): 监控系统空闲状态。在闲时，提取 LanceDB 中的初级数据，结合页标题、详细参数等，调用 LLM 进行聚类重打标，优化数据库结构。
+闲时任务 (Idle Processing): 基于 Windows `GetLastInputInfo` 监控真实用户输入空闲状态。用户无键鼠输入超过 `IDLE_TIMEOUT`（config.yaml，默认 300 秒）即视为闲时，提取 LanceDB 中的初级数据，结合页标题、详细参数等，调用 LLM 进行聚类重打标，将初级数据提炼合并为更有用的信息（refined_summary / refined_tags / cluster_id）。该任务受 `SUMMARY` 开关控制（默认开启），关闭时不执行任何闲时 LLM 调用。
 
 ### 3.2 存储与 RAG 层 (src/TimeIndex/db/vector_store.py & src/TimeIndex/db/embedding_provider.py)
 

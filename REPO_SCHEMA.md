@@ -90,6 +90,18 @@ CLI 入口，处理用户的显式命令：
 - LLM 服务: 验证 Ollama 连通性及 `LLM_MODEL` 是否已拉取。
 - 存储权限: 验证 LanceDB 目录的读写权限。
 
+### 3.5 闲时摘要
+
+功能定位: 在用户闲时调用 LLM，将 `ti get` 返回的初级活动记录提炼合并为更有用的信息。
+
+闲时判定: 不依赖 WMI 采集节奏（采集器每数秒产生一次快照，会持续刷新活动时间），而是基于 Windows `GetLastInputInfo`（`daemon.py` 的 `get_idle_seconds()`）获取真实键鼠空闲时长。用户无输入超过 `IDLE_TIMEOUT`（默认 300 秒）即视为闲时，`_idle_loop` 每 60 秒检查一次。
+
+摘要机制: 闲时触发 `_run_retag_task`，调用 `LLMProcessor.retag_cluster()` 对 LanceDB 中 `refined_tags` 为空的初级记录进行聚类重打标，生成 `refined_summary` / `refined_tags` / `cluster_id`。
+
+开关控制: 整个闲时摘要任务受 `SUMMARY` 开关控制（默认 `true`）。`SUMMARY: false` 时 `_run_retag_task` 直接返回，不发起任何 LLM 调用。
+
+数据消费: `ti get` 的 `format_record` 优先展示 `refined_summary` / `refined_tags`，并在与原始摘要不同时附注原始摘要，用户看到的是提炼合并后的结果。
+
 ## 4. 开发规范提示 (Development Guidelines)
 
 配置与日志规范:
@@ -101,3 +113,10 @@ CLI 入口，处理用户的显式命令：
 LLM 接口: 统一使用 OpenAI SDK 兼容模式。针对深度思考模型，处理器会自动尝试从 `reasoning_content` 字段提取有效载荷。
 
 数据容错: 意图推断失败时，系统会生成基于进程名的 `fallback` 记录，确保时间线连续性。
+
+配置项参考 (config.yaml):
+- `IDLE_TIMEOUT`: 闲时触发阈值（秒），用户无键鼠输入超过该值即触发闲时摘要任务（默认 300）。
+- `SUMMARY`: 重打标开关，控制闲时是否调用 LLM 进行聚类重打标（默认 true）。
+- `retag_mode` / `rag_keepalive` / `rag_timeout` / `retag_rules` / `global_blacklist`: 一阶段重打标与 RAG 生命周期相关参数。
+- `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` / `EMBEDDING_MODEL`: LLM 与 Embedding 服务配置。
+- 修改方式: `ti config KEY=VALUE`（注意使用 `=` 分隔），修改后需重启守护进程生效。

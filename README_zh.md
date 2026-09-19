@@ -33,7 +33,7 @@ TimeIndex 是一个基于本地大模型（如 gemma-4-e4b）的个人活动自�
 
 1.  克隆仓库：
     ```bash
-    git clone https://github.com/your-repo/TimeIndex.git
+    git clone https://github.com/zhangtony239/TimeIndex.git
     cd TimeIndex
     ```
 

@@ -33,7 +33,7 @@ The project adopts a modular design, mainly including the following parts:
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/your-repo/TimeIndex.git
+    git clone https://github.com/zhangtony239/TimeIndex.git
     cd TimeIndex
     ```
 

@@ -207,7 +207,7 @@ class WmiCollector:
             command_line = getattr(process, 'CommandLine', None)
             
             # 过滤黑名单
-            if process_name.lower() in [b.lower() for b in self.global_blacklist]:
+            if self._is_blacklisted(process_name):
                 return
             
             proc_event = ProcessEvent(
@@ -276,13 +276,16 @@ class WmiCollector:
         
         def enum_windows_callback(hwnd, _):
             try:
-                if win32gui.IsWindowVisible(hwnd) and win32gui.GetWindowText(hwnd):
+                if win32gui.IsWindowVisible(hwnd):
                     _, pid = win32process.GetWindowThreadProcessId(hwnd)
-                    title = win32gui.GetWindowText(hwnd)
-                    pids_with_windows.add(pid)
-                    
                     # 获取进程名
                     process_name = self._get_process_name(pid)
+                    if self._is_blacklisted(process_name):
+                        return
+                    title = win32gui.GetWindowText(hwnd)
+                    if not title:
+                        return
+                    pids_with_windows.add(pid)
                     
                     # [DEBUG] 打印每个采集到的窗口信息
                     logger.debug(
@@ -306,6 +309,10 @@ class WmiCollector:
             logger.error(f"Error enumerating windows: {e}", exc_info=True)
         
         return windows
+
+    def _is_blacklisted(self, process_name: str) -> bool:
+        """窗口和进程事件使用相同的屏蔽规则，在记录标题前过滤。"""
+        return process_name.casefold() in {name.casefold() for name in self.global_blacklist}
     
     def _collect_hardware_stats(self) -> HardwareStats:
         """收集 CPU、内存等硬件统计"""

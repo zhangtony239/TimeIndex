@@ -13,6 +13,7 @@ db/vector_store.py - 向量存储与 RAG 层
 
 import os
 import logging
+import math
 import threading
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime, timedelta
@@ -180,15 +181,19 @@ class VectorStore:
         with self._lock:
             table = self.get_table(table_name)
             
-            # 构建更新数据
-            update_data = self._prepare_record(record)
-            
-            # LanceDB 更新: 先删除再插入
-            table.delete(f"id = '{record_id}'")
-            table.add([update_data])
+            # 只更新调用方提供的字段，未提供的原始证据和向量保持不变。
+            prepared = self._prepare_record(record)
+            update_data = {
+                key: prepared[key] for key in record
+                if key in prepared and key != "id"
+            }
+            if not update_data:
+                return False
+            escaped_id = str(record_id).replace("'", "''")
+            result = table.update(where=f"id = '{escaped_id}'", values=update_data)
             
             logger.debug(f"Updated record {record_id}")
-            return True
+            return result.rows_updated > 0
     
     def update_batch(self, records: List[Dict[str, Any]], table_name: str = "timeindex") -> int:
         """
@@ -359,12 +364,11 @@ class VectorStore:
         """
         table = self.get_table(table_name)
         
-        results = table.search().to_pandas()
-        
-        # 过滤未重打标的记录
-        mask = results["refined_tags"].isna()
-        results = results[mask]
-        results = results.head(batch_size)
+        if batch_size <= 0:
+            return []
+        # 先过滤再限制批次，避免默认查询条数导致后续记录永远无法整理。
+        results = (table.search().where("refined_tags IS NULL")
+                   .limit(batch_size).to_pandas())
         
         return self._results_to_records(results)
 
@@ -405,8 +409,7 @@ class VectorStore:
     def get_record_count(self, table_name: str = "timeindex") -> int:
         """获取记录总数"""
         table = self.get_table(table_name)
-        results = table.search().to_pandas()
-        return len(results)
+        return table.count_rows()
     
     def cleanup_expired_records(
         self,
@@ -459,25 +462,55 @@ class VectorStore:
             "id": record.get("id", f"rec_{datetime.now().timestamp()}"),
             "timestamp": record.get("timestamp", datetime.now().isoformat()),
             "summary": record.get("summary", ""),
-            "tags": record.get("tags", []),
+            "tags": self._list_value(record.get("tags")),
             "confidence": float(record.get("confidence", 0.0)),
             "primary_app": record.get("primary_app", "unknown"),
             "active_windows": [
                 json.dumps(w) if isinstance(w, dict) else str(w)
-                for w in record.get("active_windows", [])
+                for w in self._list_value(record.get("active_windows"))
             ],
             "process_events": [
                 json.dumps(e) if isinstance(e, dict) else str(e)
-                for e in record.get("process_events", [])
+                for e in self._list_value(record.get("process_events"))
             ],
             "hardware": json.dumps(record.get("hardware", {})),
-            "refined_tags": record.get("refined_tags"),
-            "refined_summary": record.get("refined_summary"),
-            "cluster_id": record.get("cluster_id"),
-            "vector": record.get("vector", [0.0] * self._vector_dim),
+            "refined_tags": self._list_value(record.get("refined_tags"), nullable=True),
+            "refined_summary": self._nullable_value(record.get("refined_summary")),
+            "cluster_id": self._nullable_value(record.get("cluster_id")),
+            "vector": self._prepare_vector(record.get("vector")),
         }
         
         return data
+
+    @staticmethod
+    def _nullable_value(value):
+        """将数据库返回的空值统一转换为 None。"""
+        if value is None or (isinstance(value, float) and math.isnan(value)):
+            return None
+        return value
+
+    @classmethod
+    def _list_value(cls, value, nullable: bool = False):
+        value = cls._nullable_value(value)
+        if value is None:
+            return None if nullable else []
+        if hasattr(value, "tolist"):
+            value = value.tolist()
+        if not isinstance(value, (list, tuple)):
+            raise TypeError("List field must contain a list or array")
+        return list(value)
+
+    def _prepare_vector(self, value) -> Optional[List[float]]:
+        """缺少向量时保留原始记录；已有向量必须符合表结构。"""
+        vector = self._list_value(value, nullable=True)
+        if vector is None or len(vector) == 0:
+            return None
+        if len(vector) != self._vector_dim:
+            raise ValueError(f"Expected {self._vector_dim} vector dimensions, got {len(vector)}")
+        vector = [float(item) for item in vector]
+        if not all(math.isfinite(item) for item in vector):
+            raise ValueError("Vector values must be finite")
+        return vector
     
     def _results_to_records(self, df) -> List[Dict[str, Any]]:
         """
@@ -497,15 +530,16 @@ class VectorStore:
                 "id": row.get("id", ""),
                 "timestamp": row.get("timestamp", ""),
                 "summary": row.get("summary", ""),
-                "tags": row.get("tags", []) if row.get("tags") is not None else [],
+                "tags": self._list_value(row.get("tags")),
                 "confidence": float(row.get("confidence", 0.0)),
                 "primary_app": row.get("primary_app", "unknown"),
-                "active_windows": row.get("active_windows", []),
-                "process_events": row.get("process_events", []),
+                "active_windows": self._list_value(row.get("active_windows")),
+                "process_events": self._list_value(row.get("process_events")),
                 "hardware": {},
-                "refined_tags": row.get("refined_tags"),
-                "refined_summary": row.get("refined_summary"),
-                "cluster_id": row.get("cluster_id"),
+                "refined_tags": self._list_value(row.get("refined_tags"), nullable=True),
+                "refined_summary": self._nullable_value(row.get("refined_summary")),
+                "cluster_id": self._nullable_value(row.get("cluster_id")),
+                "vector": self._list_value(row.get("vector"), nullable=True),
             }
             
             # 解析 hardware JSON
@@ -661,7 +695,13 @@ class TimeIndexStore:
         Returns:
             更新的记录数
         """
-        return self._store.update_batch(records)
+        fields = ("refined_tags", "refined_summary", "cluster_id")
+        updates = [
+            {"id": record.get("id"), **{key: record[key] for key in fields}}
+            for record in records
+            if all(record.get(key) is not None for key in fields)
+        ]
+        return self._store.update_batch(updates)
 
     def cleanup(self) -> int:
         """

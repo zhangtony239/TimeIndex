@@ -9,6 +9,7 @@ import json
 import os
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from openai import OpenAI
 
 from .wmi_monitor import SystemSnapshot, ProcessEvent, WindowInfo
@@ -141,7 +142,7 @@ class LLMProcessor:
             重打标后的记录列表
         """
         if not records:
-            return records
+            return []
         
         # 构建提示词
         prompt = self._build_retag_prompt(records)
@@ -159,6 +160,7 @@ class LLMProcessor:
                             "- refined_tags: 优化后的标签列表\n"
                             "- refined_summary: 优化后的摘要\n"
                             "- cluster_id: 所属聚类 ID\n"
+                            "id 必须逐字保留原始记录编号，使用 JSON 字符串，不要转换为数字。\n"
                             "只返回 JSON，不要有其他内容。"
                         )
                     },
@@ -181,11 +183,11 @@ class LLMProcessor:
                 return self._parse_retag_response(content, records)
             else:
                 logger.warning("LLM returned empty response for retag")
-                return records
+                return []
                 
         except Exception as e:
             logger.error(f"Error retagging cluster: {e}", exc_info=True)
-            return records
+            return []
 
     def _build_intent_prompt(self, snapshot: SystemSnapshot) -> str:
         """构建意图推测的提示词"""
@@ -225,63 +227,107 @@ class LLMProcessor:
         
         return "\n".join(lines)
     
-    def _parse_json_response(self, content: str) -> Any:
+    def _parse_json_response(self, content: str, precise_numbers: bool = False) -> Any:
         """解析 LLM 的 JSON 响应"""
+        # 用 Decimal 保留数字编号的原始精度，避免时间戳经过浮点转换后无法匹配。
+        decoder = json.JSONDecoder(parse_float=Decimal if precise_numbers else float)
+        content = content.strip()
         try:
-            # 尝试直接解析
-            return json.loads(content)
-        except json.JSONDecodeError:
-            # 处理 markdown 代码块格式 (```json ... ```)
+            return decoder.decode(content)
+        except ValueError:
+            pass
+        if '```' in content:
+            lines = content.splitlines()
+            json_lines = []
+            in_code_block = False
+            for line in lines:
+                if line.strip().startswith('```'):
+                    if in_code_block:
+                        break
+                    in_code_block = True
+                    continue
+                if in_code_block:
+                    json_lines.append(line)
+            content = '\n'.join(json_lines).strip()
+        try:
+            return decoder.decode(content)
+        except ValueError:
             try:
-                # 查找 JSON 块
-                if '```' in content:
-                    # 提取代码块内容
-                    lines = content.split('\n')
-                    json_lines = []
-                    in_code_block = False
-                    for line in lines:
-                        if line.strip().startswith('```'):
-                            if in_code_block:
-                                break
-                            in_code_block = True
-                            continue
-                        if in_code_block:
-                            json_lines.append(line)
-                    content = '\n'.join(json_lines)
-                
-                # 尝试提取 JSON 对象
-                start = content.index('{')
-                end = content.rindex('}') + 1
-                json_str = content[start:end]
-                return json.loads(json_str)
-            except (ValueError, json.JSONDecodeError) as e:
+                starts = [content.index(char) for char in ('[', '{') if char in content]
+                result, _ = decoder.raw_decode(content[min(starts):])
+                return result
+            except ValueError as e:
                 logger.error(f"Failed to parse JSON response: {e}")
                 return {}
+
+    @staticmethod
+    def _numeric_id(value) -> Optional[Decimal]:
+        if isinstance(value, bool) or not isinstance(value, (str, int, float, Decimal)):
+            return None
+        try:
+            number = Decimal(str(value))
+            return number if number.is_finite() else None
+        except InvalidOperation:
+            return None
+
+    @staticmethod
+    def _valid_text(value) -> bool:
+        return (isinstance(value, str) and bool(value.strip())
+                and value.strip().casefold() not in {"nan", "none", "null"})
     
     def _parse_retag_response(self, content: str, original_records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """解析重打标响应"""
+        """只返回已匹配且字段有效的整理结果，不修改原始输入记录。"""
         try:
-            retagged = self._parse_json_response(content)
-            if isinstance(retagged, list):
-                # 将重打标结果合并回原始记录
-                retag_map: Dict[Any, Any] = {}
-                for r in retagged:
-                    if isinstance(r, dict) and 'id' in r:
-                        retag_map[r['id']] = r
-                
-                for record in original_records:
-                    record_id = record.get('id')
-                    if record_id in retag_map:
-                        retag_record = retag_map[record_id]
-                        if isinstance(retag_record, dict):
-                            record['refined_tags'] = retag_record.get('refined_tags', record.get('tags'))
-                            record['refined_summary'] = retag_record.get('refined_summary', record.get('summary'))
-                            record['cluster_id'] = retag_record.get('cluster_id')
-                return original_records
+            retagged = self._parse_json_response(content, precise_numbers=True)
+            if not isinstance(retagged, list):
+                return []
+            originals = {record['id']: record for record in original_records}
+            numeric_ids: Dict[Decimal, List[str]] = {}
+            for record_id in originals:
+                number = self._numeric_id(record_id)
+                if number is not None:
+                    numeric_ids.setdefault(number, []).append(record_id)
+
+            updates: Dict[str, Dict[str, Any]] = {}
+            seen = set()
+            duplicates = set()
+            for result in retagged:
+                if not isinstance(result, dict):
+                    continue
+                returned_id = result.get('id')
+                record_id = returned_id if isinstance(returned_id, str) and returned_id in originals else None
+                if record_id is None:
+                    matches = numeric_ids.get(self._numeric_id(returned_id), [])
+                    if len(matches) != 1:
+                        continue
+                    record_id = matches[0]
+                if record_id in seen:
+                    duplicates.add(record_id)
+                    continue
+                seen.add(record_id)
+
+                tags = result.get('refined_tags')
+                summary = result.get('refined_summary')
+                cluster_id = result.get('cluster_id')
+                if isinstance(cluster_id, (int, Decimal)) and not isinstance(cluster_id, bool):
+                    if self._numeric_id(cluster_id) is not None:
+                        cluster_id = str(cluster_id)
+                if (not isinstance(tags, list) or not tags
+                        or not all(self._valid_text(tag) for tag in tags)
+                        or not self._valid_text(summary) or not self._valid_text(cluster_id)):
+                    continue
+                updates[record_id] = {
+                    **originals[record_id],
+                    'refined_tags': list(tags),
+                    'refined_summary': summary,
+                    'cluster_id': cluster_id,
+                }
+            return [updates[record['id']] for record in original_records
+                    if record['id'] in updates and record['id'] not in duplicates]
         except Exception as e:
             logger.error(f"Error parsing retag response: {e}")
         
-        return original_records
+        return []
     
     def _default_intent(self, snapshot: SystemSnapshot) -> Dict[str, Any]:
         """返回默认意图（当 LLM 调用失败时）"""

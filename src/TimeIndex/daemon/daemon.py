@@ -212,7 +212,11 @@ class Daemon:
             summary = intent.get("summary", "")
             if summary:
                 logger.debug(f"Generating embedding for summary: {summary}")
-                intent["vector"] = embedding_provider.get_embedding(summary)
+                try:
+                    intent["vector"] = embedding_provider.get_embedding(summary)
+                except Exception as e:
+                    logger.error(f"Embedding unavailable; saving activity without vector: {e}")
+                    intent["vector"] = None
             
             # 3. 构建记录
             record = self._build_record(snapshot, intent)
